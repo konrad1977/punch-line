@@ -1,7 +1,7 @@
 ;;; cocaine-line.el --- En anpassad mode-line för Emacs med Evil-status och avancerade anpassningar
 
 ;; Author: Mikael Konradsson
-;; Version: 1.5
+;; Version: 1.0
 ;; Package-Requires: ((emacs "25.1") (evil "1.0.0"))
 
 ;;; Commentary:
@@ -24,21 +24,6 @@
 (defgroup cocaine-line nil
   "Anpassningar för cocaine-line."
   :group 'mode-line)
-
-(defcustom cocaine-mode-line-background "#ff0000"
-  "Bakgrundsfärg för mode line."
-  :type 'color
-  :group 'cocaine-line)
-
-(defcustom cocaine-mode-line-foreground "#FFFFFF"
-  "Förgrundsfärg för mode line."
-  :type 'color
-  :group 'cocaine-line)
-
-(defcustom cocaine-mode-line-height 1.5
-  "Höjd för mode line i pixlar."
-  :type 'float
-  :group 'cocaine-line)
 
 (defcustom cocaine-right-padding 0
   "Antal mellanslag att lägga till efter tiden."
@@ -112,6 +97,11 @@
 
 (defface cocaine-line-project-face
   '((t :foreground "#FFA066" :weight bold))
+  "Standard face för project-information."
+  :group 'cocaine-line)
+
+(defface cocaine-line-eglot-icon-face
+  '((t :inherit success))
   "Standard face för project-information."
   :group 'cocaine-line)
 
@@ -198,7 +188,7 @@
   :group 'cocaine-line)
 
 (defface cocaine-line-separator-face
-  '((t :foreground "#54536D" :weight bold))
+  '((t :foreground "#54536D" :weight bold :height 0.8))
   "Face för separatorn mellan sektioner i cocaine-line."
   :group 'cocaine-line)
 
@@ -214,13 +204,13 @@
 
 (cl-defun cocaine-add-separator (&key str separator leftside (last nil) (face 'cocaine-line-separator-face))
   "Lägg till en separator efter STR om det inte är tomt eller sist.
-LAST indikerar om detta är det sista elementet.
-FACE anger vilket face som ska användas för separatorn."
+    LAST indikerar om detta är det sista elementet.
+    FACE anger vilket face som ska användas för separatorn."
   (if (and str (not (string-empty-p str)) (not last))
       (if leftside
           (progn
             (if separator
-                (concat str (propertize separator 'face face) sr)
+                (concat str (propertize separator 'face face))
               (concat str (propertize cocaine-line-separator 'face face))))
         (progn
           (if separator
@@ -283,6 +273,18 @@ FACE anger vilket face som ska användas för separatorn."
   (when-let ((rev (vc-working-revision file backend)))
     (substring rev 0 (min (length rev) 7))))
 
+(defun cocaine-eglot-info ()
+  "Return a string representing the current Eglot status for the mode line using nerd-icons."
+  (if (bound-and-true-p eglot--managed-mode)
+      (let* ((server (eglot-current-server))
+             (nick (and server (eglot--project-nickname server)))
+             (icon (propertize (nerd-icons-octicon "nf-oct-plug")
+                               'face 'cocaine-line-eglot-icon-face)))
+        (if server
+            (concat (propertize (or nick "") 'face 'cocaine-line-project-face) " " icon " ")
+          icon))
+    (cocaine-project-info)))
+
 (defun cocaine-git-info ()
   "Visa Git-branch och status med anpassade faces."
   (when (and cocaine-show-git-info
@@ -321,7 +323,7 @@ FACE anger vilket face som ska användas för separatorn."
          (icon (when (and cocaine-show-use-nerd-icons file-name)
                  (nerd-icons-icon-for-file file-name t)))
          (buffer-name (file-name-sans-extension
-                       (substring-no-properties (format-mode-line "%b")))))
+                       (substring-no-properties (format-mode-line "%b ")))))
     (if icon
         (concat icon " " (propertize buffer-name 'face 'cocaine-line-buffer-name-face))
       (propertize buffer-name 'face 'cocaine-line-buffer-name-face))))
@@ -363,7 +365,7 @@ FACE anger vilket face som ska användas för separatorn."
                                     (cocaine-line-spacer)
                                     (cocaine-buffer-name)
                                     (cocaine-add-separator :str (cocaine-major-mode) :separator "|")
-                                    (cocaine-add-separator :str (cocaine-project-info))
+                                    (cocaine-add-separator :str (cocaine-eglot-info))
                                     (cocaine-add-separator :str (mood-line-segment-hud))
                                     (cocaine-process-info)
                                     ))))
@@ -379,7 +381,7 @@ FACE anger vilket face som ska användas för separatorn."
                         (cocaine-misc-info)
                         (cocaine-add-separator :str (cocaine-git-info) :leftside t)
                         (cocaine-time))))
-    (list (propertize " " 'display `((space :align-to (- right ,(+ 2 (string-width right-section))))))
+    (list (propertize " " 'display `((space :align-to (- right ,(string-width right-section)))))
           right-section)))
 
 (defun cocaine-evil-status-inactive ()
@@ -416,34 +418,44 @@ FACE anger vilket face som ska användas för separatorn."
     (dolist (frame (frame-list))
       (dolist (window (window-list frame))
         (with-current-buffer (window-buffer window)
-          (setq cocaine-line-is-active (eq window active-window))
-          (force-mode-line-update))))))
+          (setq-local cocaine-line-is-active (eq window active-window))
+          (force-mode-line-update window))))))
 
 (defun cocaine-set-mode-line ()
   "Ställ in mode-line formatet för cocaine-line."
   (setq-default mode-line-format '(:eval (cocaine-mode-line-format))))
 
+(defun cocaine-register-hooks ()
+  "Registrera hooks för att uppdatera mode-line."
+  (add-hook 'post-command-hook #'cocaine-update-mode-line)
+  (add-hook 'window-configuration-change-hook #'cocaine-update-mode-line)
+  (add-hook 'focus-in-hook #'cocaine-update-mode-line)
+  (add-hook 'focus-out-hook #'cocaine-update-mode-line)
+  (add-hook 'window-state-change-hook #'cocaine-update-mode-line)  ; Lägg till denna hook
+  (add-hook 'after-load-theme-hook #'cocaine-update-inactive-face))
+
+(defun cocaine-remove-hooks ()
+  "Ta bort hooks för att uppdatera mode-line."
+  (remove-hook 'post-command-hook #'cocaine-update-mode-line)
+  (remove-hook 'window-configuration-change-hook #'cocaine-update-mode-line)
+  (remove-hook 'focus-in-hook #'cocaine-update-mode-line)
+  (remove-hook 'focus-out-hook #'cocaine-update-mode-line)
+  (remove-hook 'window-state-change-hook #'cocaine-update-mode-line)  ; Ta bort denna hook
+  (remove-hook 'after-load-theme-hook #'cocaine-update-inactive-face))
+
 (define-minor-mode cocaine-line-mode
   "Aktivera Cocaine Line mode."
   :group 'cocaine-line
   :global t
-  :lighter t
+  :lighter nil
   (if cocaine-line-mode
       (progn
         (cocaine-set-mode-line)
+        (cocaine-register-hooks)
         (cocaine-update-inactive-face)
-        (add-hook 'post-command-hook #'cocaine-update-mode-line)
-        (add-hook 'window-configuration-change-hook #'cocaine-update-mode-line)
-        (add-hook 'focus-in-hook #'cocaine-update-mode-line)
-        (add-hook 'focus-out-hook #'cocaine-update-mode-line)
-        (add-hook 'after-load-theme-hook #'cocaine-update-inactive-face)  ; New hook
         (cocaine-update-mode-line))
     (setq-default mode-line-format (default-value 'mode-line-format))
-    (remove-hook 'post-command-hook #'cocaine-update-mode-line)
-    (remove-hook 'window-configuration-change-hook #'cocaine-update-mode-line)
-    (remove-hook 'focus-in-hook #'cocaine-update-mode-line)
-    (remove-hook 'focus-out-hook #'cocaine-update-mode-line)
-    (remove-hook 'after-load-theme-hook #'cocaine-update-inactive-face)  ; Remove hook
+    (cocaine-remove-hooks)
     (force-mode-line-update t)))
 
 (provide 'cocaine-line)
