@@ -1,5 +1,6 @@
 # Cocaine line
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Konrad77/HaikuStocks/master/Screenshots/screenshot.png" alt="Screenshot of Cocain-line and mode line for Emacs."/>
+  <img src="
+    https://github.com/konrad1977/cocaine-line/blob/master/screenshots/cocaine.png" alt="Screenshot of Cocain-line and mode line for Emacs."/>
 </p>
