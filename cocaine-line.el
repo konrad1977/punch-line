@@ -10,13 +10,17 @@
 
 ;;; Code:
 
+(require 'all-the-icons)
+(require 'battery)
 (require 'cl-lib)
 (require 'evil)
-(require 'nerd-icons)
-(require 'all-the-icons)
-(require 'vc)
-(require 'project)
 (require 'mode-line-hud)
+(require 'nerd-icons)
+(require 'project)
+(require 'vc)
+
+(unless (bound-and-true-p battery-status-function)
+  (battery-update-handler))
 
 (defvar-local cocaine-line-is-active nil
   "Indicates if the current window is active.")
@@ -37,6 +41,11 @@
 
 (defcustom cocaine-show-buffer-position nil
   "If set to t, show buffer position."
+  :type 'boolean
+  :group 'cocaine-line)
+
+(defcustom cocaine-show-battery-info t
+  "If set to t, show battery icons with nerdicons."
   :type 'boolean
   :group 'cocaine-line)
 
@@ -356,6 +365,27 @@
   "Show time with custom face."
   (propertize (format-time-string "%H:%M") 'face 'cocaine-line-time-face))
 
+(defun cocaine-battery-info ()
+  "Show battery percentage or charging status using text and nerd-font icons on macOS."
+  (when (and cocaine-show-battery-info
+             (bound-and-true-p display-battery-mode))
+    (let* ((battery-plist (funcall battery-status-function))
+           (percentage (string-to-number (battery-format "%p" battery-plist)))
+           (status (battery-format "%B" battery-plist))
+           (charging (string= status "AC"))
+           (icon (cond
+                  (charging (nerd-icons-faicon "nf-fa-plug"))
+                  ((>= percentage 87.5) (nerd-icons-faicon "nf-fa-battery"))
+                  ((>= percentage 62.5) (nerd-icons-faicon "nf-fa-battery_3"))
+                  ((>= percentage 37.5) (nerd-icons-faicon "nf-fa-battery_2"))
+                  ((>= percentage 12.5) (nerd-icons-faicon "nf-fa-battery_1"))
+                  (t (nerd-icons-faicon "nf-fa-battery_0")))))
+      (if (and percentage status)
+          (format "%s"
+                  icon
+                  (if charging " (Charging)" ""))
+        "No battery info"))))
+
 (defun cocaine-left-section ()
   "Create the left section of the mode-line."
   (let ((left-section (list (concat (cocaine-evil-status)
@@ -377,7 +407,9 @@
                         (cocaine-add-separator :str (cocaine-copilot-info) :leftside t)
                         (cocaine-misc-info)
                         (cocaine-add-separator :str (cocaine-git-info) :leftside t)
-                        (cocaine-time))))
+                        (cocaine-add-separator :str (cocaine-battery-info) :leftside t)
+                        (cocaine-time)
+                        )))
     (list (propertize " " 'display `((space :align-to (- right ,(string-width right-section)))))
           right-section)))
 
