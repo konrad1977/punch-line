@@ -1,12 +1,12 @@
-;;; cocaine-line.el --- A customized mode-line for Emacs with Evil status and advanced customizations
+;;; cocaine-line.el --- En anpassad mode-line för Emacs med Evil-status och avancerade anpassningar
 
 ;; Author: Mikael Konradsson
-;; Version: 1.0
+;; Version: 1.5
 ;; Package-Requires: ((emacs "25.1") (evil "1.0.0"))
 
 ;;; Commentary:
-;; This package offers a customized mode-line for Emacs with Evil status,
-;; configurable colors, and the ability to customize displayed information.
+;; Detta paket erbjuder en anpassad mode-line för Emacs med Evil-status,
+;; konfigurerbara färger, och möjlighet att anpassa visad information.
 
 ;;; Code:
 
@@ -19,49 +19,64 @@
 (require 'mode-line-hud)
 
 (defvar-local cocaine-line-is-active nil
-  "Indicates if the current window is active.")
+  "Indikerar om det aktuella fönstret är aktivt.")
 
 (defgroup cocaine-line nil
-  "Customizations for cocaine-line."
+  "Anpassningar för cocaine-line."
   :group 'mode-line)
 
+(defcustom cocaine-mode-line-background "#ff0000"
+  "Bakgrundsfärg för mode line."
+  :type 'color
+  :group 'cocaine-line)
+
+(defcustom cocaine-mode-line-foreground "#FFFFFF"
+  "Förgrundsfärg för mode line."
+  :type 'color
+  :group 'cocaine-line)
+
+(defcustom cocaine-mode-line-height 1.5
+  "Höjd för mode line i pixlar."
+  :type 'float
+  :group 'cocaine-line)
+
 (defcustom cocaine-right-padding 0
-  "Number of spaces to add after the time."
+  "Antal mellanslag att lägga till efter tiden."
   :type 'integer
   :group 'cocaine-line)
 
 (defcustom cocaine-show-column-info nil
-  "If set to t, show column information."
+  "Om satt till t, visa kolumninformation."
   :type 'boolean
   :group 'cocaine-line)
 
 (defcustom cocaine-show-buffer-position nil
-  "If set to t, show buffer position."
+  "Om satt till t, visa kolumninformation."
   :type 'boolean
   :group 'cocaine-line)
 
 (defcustom cocaine-show-use-nerd-icons t
-  "If set to t, show file icons with nerdicons."
+  "Om satt till t, visa filikoner med nerdicons."
   :type 'boolean
   :group 'cocaine-line)
 
 (defcustom cocaine-show-processes-info t
-  "If set to t, show active processes."
+  "Om satt till t, visa aktiva processer."
   :type 'boolean
   :group 'cocaine-line)
 
 (defcustom cocaine-show-misc-info nil
-  "If set to t, show misc processes."
+  "Om satt till t, visa misc processer."
   :type 'boolean
   :group 'cocaine-line)
 
 (defcustom cocaine-show-git-info t
-  "If set to t, show Git branch and status."
+  "Om satt till t, visa Git-branch och status."
   :type 'boolean
   :group 'cocaine-line)
 
 (defcustom cocaine-show-copilot-info t
-  "If set to t, show copilot icon."
+  "Om satt till t, visa copilot ikon."
   :type 'boolean
   :group 'cocaine-line)
 
@@ -72,124 +87,119 @@
 
 (defface cocaine-line-buffer-name-face
   '((t :foreground "#a0a0ae" :weight bold))
-  "Face for buffer name."
+  "Face för buffertnamn."
   :group 'cocaine-line)
 
 (defface cocaine-line-major-mode-face
   '((t :foreground "#888899"))
-  "Face for major mode."
+  "Face för major mode."
   :group 'cocaine-line)
 
 (defface cocaine-line-position-face
   '((t :foreground "#FFA07A"))
-  "Face for buffer position."
+  "Face för buffertposition."
   :group 'cocaine-line)
 
 (defface cocaine-line-time-face
   '((t :foreground "#888899":weight light))
-  "Face for time display."
+  "Face för tidsvisning."
   :group 'cocaine-line)
 
 (defface cocaine-line-git-face
   '((t :foreground "#a0a0ae"))
-  "Standard face for Git information."
+  "Standard face för Git-information."
   :group 'cocaine-line)
 
 (defface cocaine-line-project-face
   '((t :foreground "#FFA066" :weight bold))
-  "Standard face for project information."
+  "Standard face för project-information."
   :group 'cocaine-line)
 
-(defface cocaine-line-eglot-icon-face
-  '((t :inherit eglot-mode-line))
-  "Standard face for project information."
-  :group 'cocaine-line)
-
-;; Update Git colors to faces
+;; Uppdatera Git-färger till faces
 (defcustom cocaine-git-faces
   '((edited . cocaine-line-git-edited-face)
     (added . cocaine-line-git-added-face)
     (removed . cocaine-line-git-removed-face)
     (conflict . cocaine-line-git-conflict-face)
     (default . cocaine-line-git-face))
-  "Faces for different Git states."
+  "Faces för olika Git-tillstånd."
   :type '(alist :key-type symbol :value-type face)
   :group 'cocaine-line)
 
 (defface cocaine-line-git-edited-face
   '((t :foreground "#F1FA8C"))
-  "Face for edited Git files."
+  "Face för redigerade Git-filer."
   :group 'cocaine-line)
 
 (defface cocaine-line-git-added-face
   '((t :foreground "#50FA7B"))
-  "Face for added Git files."
+  "Face för tillagda Git-filer."
   :group 'cocaine-line)
 
 (defface cocaine-line-git-removed-face
   '((t :foreground "#FF5555"))
-  "Face for removed Git files."
+  "Face för borttagna Git-filer."
   :group 'cocaine-line)
 
 (defface cocaine-line-git-conflict-face
   '((t :foreground "#FF79C6"))
-  "Face for Git conflicts."
+  "Face för Git-konflikter."
   :group 'cocaine-line)
 
-;; Update Evil colors to faces
+;; Uppdatera Evil-färger till faces
 (defcustom cocaine-evil-faces
   '((normal . cocaine-line-evil-normal-face)
     (insert . cocaine-line-evil-insert-face)
     (visual . cocaine-line-evil-visual-face)
     (replace . cocaine-line-evil-replace-face)
     (emacs . cocaine-line-evil-emacs-face))
-  "Faces for different Evil states."
+  "Faces för olika Evil-lägen."
   :type '(alist :key-type symbol :value-type face)
   :group 'cocaine-line)
 
 (defface cocaine-line-evil-normal-face
   '((t :foreground "#FFFFFF" :background "#2D4F67" :weight bold
        :box (:line-width 8 :color "#2D4F67")))
-  "Face for Evil normal state."
+  "Face för Evil normal-läge."
   :group 'cocaine-line)
 
 (defface cocaine-line-evil-insert-face
   '((t :foreground "#333333" :background "#E6C384" :weight bold
        :box (:line-width 8 :color "#E6C384")))
-  "Face for Evil insert state."
+  "Face för Evil insert-läge."
   :group 'cocaine-line)
 
 (defface cocaine-line-evil-visual-face
   '((t :foreground "#333333" :background "#D27E99" :weight bold
        :box (:line-width 8 :color "#D27E99")))
-  "Face for Evil visual state."
+  "Face för Evil visual-läge."
   :group 'cocaine-line)
 
 (defface cocaine-line-evil-replace-face
   '((t :foreground "#333333" :background "#FF5D62" :weight bold
        :box (:line-width 8 :color "#FF5D62")))
-  "Face for Evil replace state."
+  "Face för Evil replace-läge."
   :group 'cocaine-line)
 
 (defface cocaine-line-evil-emacs-face
   '((t :foreground "#333333" :background "#B0C4DE" :weight bold
        :box (:line-width 8 :color "#B0C4DE")))
-  "Face for Emacs state."
+  "Face för Emacs-läge."
   :group 'cocaine-line)
 
 (defcustom cocaine-line-separator " | "
-  "Separator used between sections in the mode-line."
+  "Separator som används mellan sektioner i mode-line."
   :type 'string
   :group 'cocaine-line)
 
 (defcustom cocaine-line-separator-face 'cocaine-line-separator-face
-  "Face for the separator between sections."
+  "Face för separatorn mellan sektioner."
   :type 'face
   :group 'cocaine-line)
 
 (defface cocaine-line-separator-face
-  '((t :foreground "#54536D" :weight bold :height 0.8))
-  "Face for the separator between sections in cocaine-line."
+  '((t :foreground "#54536D" :weight bold))
+  "Face för separatorn mellan sektioner i cocaine-line."
   :group 'cocaine-line)
 
 (defun cocaine-get-mode-line-inactive-bg ()
@@ -203,14 +213,14 @@
                         :box `(:line-width 8 :color ,bg-color))))
 
 (cl-defun cocaine-add-separator (&key str separator leftside (last nil) (face 'cocaine-line-separator-face))
-  "Add a separator after STR if it is not empty or last.
-    LAST indicates if this is the last element.
-    FACE specifies which face to use for the separator."
+  "Lägg till en separator efter STR om det inte är tomt eller sist.
+LAST indikerar om detta är det sista elementet.
+FACE anger vilket face som ska användas för separatorn."
   (if (and str (not (string-empty-p str)) (not last))
       (if leftside
           (progn
             (if separator
-                (concat str (propertize separator 'face face))
+                (concat str (propertize separator 'face face) sr)
               (concat str (propertize cocaine-line-separator 'face face))))
         (progn
           (if separator
@@ -219,9 +229,9 @@
           ))
     str))
 
-;; Evil status function
+;; Evil-status funktion
 (defun cocaine-evil-status ()
-  "Show Evil status with custom face and correct vertical alignment."
+  "Visa Evil-status med anpassad face och korrekt vertikal utsträckning."
   (let* ((evil-state (if (and (bound-and-true-p evil-local-mode)
                               (boundp 'evil-state))
                          evil-state
@@ -246,7 +256,7 @@
       (concat
        (when (> info 0)
          (propertize (format " %s %d" (nerd-icons-codicon "nf-cod-lightbulb") info)
-                     'face '(:inherit success)))
+                     'face '(:inherit info)))
        (when (> warning 0)
          (propertize (format " %s %d" (nerd-icons-codicon "nf-cod-warning") warning)
                      'face '(:inherit warning)))
@@ -255,14 +265,14 @@
                      'face '(:inherit error)))))))
 
 (defun cocaine-process-info ()
-  "Show information about active processes."
+  "Visa information om aktiva processer."
   (when cocaine-show-processes-info
   (let ((process-info (format-mode-line mode-line-process)))
     (unless (string-blank-p process-info)
       (string-trim process-info)))))
 
 (defun cocaine-misc-info ()
-  "Show information about misc info."
+  "Visa information om misc info."
   (when cocaine-show-misc-info
     (let ((misc-info (format-mode-line mode-line-misc-info)))
       (unless (string-blank-p misc-info)
@@ -273,20 +283,8 @@
   (when-let ((rev (vc-working-revision file backend)))
     (substring rev 0 (min (length rev) 7))))
 
-(defun cocaine-eglot-info ()
-  "Return a string representing the current Eglot status for the mode line using nerd-icons."
-  (if (bound-and-true-p eglot--managed-mode)
-      (let* ((server (eglot-current-server))
-             (nick (and server (eglot--project-nickname server)))
-             (icon (propertize (nerd-icons-octicon "nf-oct-plug")
-                               'face 'cocaine-line-eglot-icon-face)))
-        (if server
-            (concat (propertize (or nick "") 'face 'cocaine-line-project-face) " " icon " ")
-          icon))
-    (cocaine-project-info)))
-
 (defun cocaine-git-info ()
-  "Show Git branch and status with custom faces."
+  "Visa Git-branch och status med anpassade faces."
   (when (and cocaine-show-git-info
              (buffer-file-name)
              (vc-git-registered (buffer-file-name)))
@@ -312,34 +310,34 @@
         (projectile-project-name))))
 
 (defun cocaine-project-info ()
-  "Show project information."
+  "Visa project information."
   (let ((project (cocaine-project-name)))
     (propertize project 'face 'cocaine-line-project-face)))
 
-;; Custom functions for left section
+;; Anpassade funktioner för vänster sektion
 (defun cocaine-buffer-name ()
-  "Show buffer name with custom face and icon (if available)."
+  "Visa buffertnamn med anpassad face och ikon (om tillgänglig)."
   (let* ((file-name (buffer-file-name))
          (icon (when (and cocaine-show-use-nerd-icons file-name)
                  (nerd-icons-icon-for-file file-name t)))
          (buffer-name (file-name-sans-extension
-                       (substring-no-properties (format-mode-line "%b ")))))
+                       (substring-no-properties (format-mode-line "%b")))))
     (if icon
         (concat icon " " (propertize buffer-name 'face 'cocaine-line-buffer-name-face))
       (propertize buffer-name 'face 'cocaine-line-buffer-name-face))))
 
 (defun cocaine-major-mode ()
-  "Show major mode with custom face."
+  "Visa major mode med anpassad face."
   (propertize (substring-no-properties (format-mode-line mode-name))
               'face 'cocaine-line-major-mode-face))
 
 (defun cocaine-line-col ()
-  "Show line and column with custom face."
+  "Visa rad och kolumn med anpassad face."
   (when cocaine-show-column-info
     (propertize "[%l:%c]" 'face 'cocaine-line-position-face)))
 
 (defun cocaine-buffer-position ()
-  "Show buffer position percentage with custom face."
+  "Visa procentuell position med anpassad face."
   (when cocaine-show-buffer-position
     (propertize "%p%" 'face 'cocaine-line-position-face)))
 
@@ -349,27 +347,30 @@
     (propertize " " 'face '(:inherit success))))
 
 (defun cocaine-line-spacer ()
-  "Show an empty string."
+  "Visa en tom sträng."
   (propertize " "))
 
 (defun cocaine-time ()
-  "Show time with custom face."
-  (propertize (format-time-string "%H:%M") 'face 'cocaine-line-time-face))
+  "Visa tid med anpassad face."
+  (concat
+   (propertize (format-time-string "%H:%M")
+               'face 'cocaine-line-time-face)
+   (make-string cocaine-right-padding ?\s)))
 
 (defun cocaine-left-section ()
-  "Create the left section of the mode-line."
+  "Skapa vänster sektion av mode-line."
   (let ((left-section (list (concat (cocaine-evil-status)
                                     (cocaine-line-spacer)
                                     (cocaine-buffer-name)
                                     (cocaine-add-separator :str (cocaine-major-mode) :separator "|")
-                                    (cocaine-add-separator :str (cocaine-eglot-info))
+                                    (cocaine-add-separator :str (cocaine-project-info))
                                     (cocaine-add-separator :str (mood-line-segment-hud))
                                     (cocaine-process-info)
                                     ))))
     left-section))
 
 (defun cocaine-right-section ()
-  "Create the right section of the mode-line."
+  "Skapa höger sektion av mode-line."
   (let ((right-section (concat
                         (cocaine-line-col)
                         (cocaine-add-separator :str (cocaine-flycheck-mode-line) :leftside t)
@@ -378,7 +379,7 @@
                         (cocaine-misc-info)
                         (cocaine-add-separator :str (cocaine-git-info) :leftside t)
                         (cocaine-time))))
-    (list (propertize " " 'display `((space :align-to (- right ,(string-width right-section)))))
+    (list (propertize " " 'display `((space :align-to (- right ,(+ 2 (string-width right-section))))))
           right-section)))
 
 (defun cocaine-evil-status-inactive ()
@@ -402,7 +403,7 @@
                      'face 'cocaine-line-inactive-face))))
 
 (defun cocaine-mode-line-format ()
-  "Generate the format for cocaine-line mode-line."
+  "Generera formatet för cocaine-line mode-line."
   (let ((left (cocaine-left-section))
         (right (cocaine-right-section)))
     (if cocaine-line-is-active
@@ -410,49 +411,39 @@
       (cocaine-mode-line-inactive-format))))
 
 (defun cocaine-update-mode-line (&optional _)
-  "Update mode-line for all windows."
+  "Uppdatera mode-line för alla fönster."
   (let ((active-window (selected-window)))
     (dolist (frame (frame-list))
       (dolist (window (window-list frame))
         (with-current-buffer (window-buffer window)
-          (setq-local cocaine-line-is-active (eq window active-window))
-          (force-mode-line-update window))))))
+          (setq cocaine-line-is-active (eq window active-window))
+          (force-mode-line-update))))))
 
 (defun cocaine-set-mode-line ()
-  "Set the mode-line format for cocaine-line."
+  "Ställ in mode-line formatet för cocaine-line."
   (setq-default mode-line-format '(:eval (cocaine-mode-line-format))))
 
-(defun cocaine-register-hooks ()
-  "Register hooks to update the mode-line."
-  (add-hook 'post-command-hook #'cocaine-update-mode-line)
-  (add-hook 'window-configuration-change-hook #'cocaine-update-mode-line)
-  (add-hook 'focus-in-hook #'cocaine-update-mode-line)
-  (add-hook 'focus-out-hook #'cocaine-update-mode-line)
-  (add-hook 'window-state-change-hook #'cocaine-update-mode-line)  ; Add this hook
-  (add-hook 'after-load-theme-hook #'cocaine-update-inactive-face))
-
-(defun cocaine-remove-hooks ()
-  "Remove hooks to update the mode-line."
-  (remove-hook 'post-command-hook #'cocaine-update-mode-line)
-  (remove-hook 'window-configuration-change-hook #'cocaine-update-mode-line)
-  (remove-hook 'focus-in-hook #'cocaine-update-mode-line)
-  (remove-hook 'focus-out-hook #'cocaine-update-mode-line)
-  (remove-hook 'window-state-change-hook #'cocaine-update-mode-line)  ; Remove this hook
-  (remove-hook 'after-load-theme-hook #'cocaine-update-inactive-face))
-
 (define-minor-mode cocaine-line-mode
-  "Activate Cocaine Line mode."
+  "Aktivera Cocaine Line mode."
   :group 'cocaine-line
   :global t
-  :lighter nil
+  :lighter t
   (if cocaine-line-mode
       (progn
         (cocaine-set-mode-line)
-        (cocaine-register-hooks)
         (cocaine-update-inactive-face)
+        (add-hook 'post-command-hook #'cocaine-update-mode-line)
+        (add-hook 'window-configuration-change-hook #'cocaine-update-mode-line)
+        (add-hook 'focus-in-hook #'cocaine-update-mode-line)
+        (add-hook 'focus-out-hook #'cocaine-update-mode-line)
+        (add-hook 'after-load-theme-hook #'cocaine-update-inactive-face)  ; New hook
         (cocaine-update-mode-line))
     (setq-default mode-line-format (default-value 'mode-line-format))
-    (cocaine-remove-hooks)
+    (remove-hook 'post-command-hook #'cocaine-update-mode-line)
+    (remove-hook 'window-configuration-change-hook #'cocaine-update-mode-line)
+    (remove-hook 'focus-in-hook #'cocaine-update-mode-line)
+    (remove-hook 'focus-out-hook #'cocaine-update-mode-line)
+    (remove-hook 'after-load-theme-hook #'cocaine-update-inactive-face)  ; Remove hook
     (force-mode-line-update t)))
 
 (provide 'cocaine-line)
