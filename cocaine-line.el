@@ -354,10 +354,7 @@
 
 (defun cocaine-time ()
   "Show time with custom face."
-  (concat
-   (propertize (format-time-string "%H:%M")
-               'face 'cocaine-line-time-face)
-   (make-string cocaine-right-padding ?s)))
+  (propertize (format-time-string "%H:%M") 'face 'cocaine-line-time-face))
 
 (defun cocaine-left-section ()
   "Create the left section of the mode-line."
