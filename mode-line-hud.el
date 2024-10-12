@@ -19,7 +19,7 @@
   :type '(boolean))
 
 ;;;###autoload
-(defun mood-line-segment-hud ()
+(defun mode-line-segment-hud ()
   "Return the number of active multiple-cursors."
   mode-line-segment-hud--text)
 

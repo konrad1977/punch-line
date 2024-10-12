@@ -363,7 +363,7 @@
                                     (cocaine-buffer-name)
                                     (cocaine-add-separator :str (cocaine-major-mode) :separator "|")
                                     (cocaine-add-separator :str (cocaine-eglot-info))
-                                    (cocaine-add-separator :str (mood-line-segment-hud))
+                                    (cocaine-add-separator :str (mode-line-segment-hud))
                                     (cocaine-process-info)
                                     ))))
     left-section))
