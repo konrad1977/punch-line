@@ -197,7 +197,8 @@
   "Face for the separator between sections in cocaine-line."
   :group 'cocaine-line)
 
-(cl-defun cocaine-add-separator (&key str separator leftside (last nil) (face 'cocaine-line-separator-face))
+(cl-defun cocaine-add-separator (&key str separator leftside (last nil)
+                                      (face 'cocaine-line-separator-face))
   "Add a separator after STR if it is not empty or last.
     LAST indicates if this is the last element.
     FACE specifies which face to use for the separator."
@@ -393,29 +394,31 @@
                                     (cocaine-add-separator :str
                                                            (cocaine-major-mode)
                                                            :separator " | ")
-                                    (cocaine-add-separator :str (cocaine-eglot-info))
+                                    (cocaine-add-separator
+                                     :str
+                                     (if (derived-mode-p
+                                          'pdf-view-mode)
+                                         (concat " " (salih/doom-modeline-update-pdf-pages-only-percent))
+                                       (doom-modeline-segment--buffer-position))
+                                     :leftside t)
                                     (cocaine-add-separator :str (mode-line-segment-hud))
                                     (cocaine-process-info)))))
 
     left-section))
-
 (defun cocaine-right-section ()
   "Create the right section of the modeline."
   (let ((right-section (concat
-                        (cocaine-line-col)
-                        (cocaine-add-separator :str (doom-modeline-segment--salih/word-count) :leftside t)
+                        (if (derived-mode-p 'pdf-view-mode)
+                           (propertize
+                            (salih/doom-modeline-update-pdf-pages-no-percent)) "")
+                        ;; (cocaine-add-separator :str (doom-modeline-segment--salih/word-count) :leftside t)
                         (cocaine-add-separator :str (doom-modeline-segment--salih/selection-info) :leftside t)
                         (cocaine-add-separator :str (doom-modeline-segment--matches) :leftside t)
-                        (cocaine-add-separator :str (doom-modeline-segment--buffer-position) :leftside t)
-                        (cocaine-add-separator :str (doom-modeline-segment--mu4e) :leftside t)
+                        (cocaine-add-separator :str (and (boundp 'mu4e-alert-mode-line) (or mu4e-alert-mode-line ""))  :leftside t)
                         (cocaine-add-separator :str (doom-modeline-segment--lsp) :leftside t)
                         (cocaine-add-separator :str (doom-modeline-segment--minor-modes) :leftside t)
                         (cocaine-add-separator :str (cocaine-flycheck-mode-line) :leftside t)
-                        (cocaine-buffer-position)
-                        (cocaine-add-separator :str (cocaine-copilot-info) :leftside t)
-                        (cocaine-misc-info)
-                        (cocaine-add-separator :str (cocaine-git-info) :leftside t)
-                        (cocaine-add-separator :str (cocaine-battery-info) :leftside t)
+                        (cocaine-add-separator :str (doom-modeline-segment--vcs) :leftside t)
                         (cocaine-time)
                         (cocaine-add-separator :str awqat-mode-line-string :leftside nil))))
 
