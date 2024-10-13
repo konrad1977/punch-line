@@ -306,10 +306,15 @@
    (and (fboundp 'projectile-project-name)
         (projectile-project-name))))
 
+(defface cocaine-modeline-project-dir
+  '((t (:inherit (doom-modeline font-lock-string-face bold) :weight bold)))
+  "Face used for the project directory of the mode-line buffer path."
+  :group 'doom-modeline-faces)
+
 (defun cocaine-project-info ()
   "Show project information."
   (let ((project (cocaine-project-name)))
-    (propertize project 'face 'cocaine-line-project-face)))
+    (propertize project 'face 'cocaine-modeline-project-dir)))
 
 (defface cocaine-modeline-buffer-modified
   '((t (:inherit (doom-modeline warning bold) :background unspecified :weight bold)))
@@ -396,13 +401,22 @@
   "Create the right section of the modeline."
   (let ((right-section (concat
                         (cocaine-line-col)
+                        (doom-modeline-segment--salih/word-count)
+                        (doom-modeline-segment--salih/selection-info)
+                        (doom-modeline-segment--matches)
+                        (doom-modeline-segment--buffer-position)
+                        (doom-modeline-segment--mu4e)
+                        (doom-modeline-segment--lsp)
+                        (doom-modeline-segment--minor-modes)
                         (cocaine-add-separator :str (cocaine-flycheck-mode-line) :leftside t)
                         (cocaine-buffer-position)
                         (cocaine-add-separator :str (cocaine-copilot-info) :leftside t)
                         (cocaine-misc-info)
                         (cocaine-add-separator :str (cocaine-git-info) :leftside t)
                         (cocaine-add-separator :str (cocaine-battery-info) :leftside t)
-                        (cocaine-time))))
+                        (cocaine-time)
+                        (cocaine-add-separator :str (salih/awqat-update) :leftside nil))))
+
 
     (list (propertize " " 'display `((space :align-to (- right ,(string-width right-section)))))
           right-section)))
