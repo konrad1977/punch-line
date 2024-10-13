@@ -1,11 +1,11 @@
-;;; cocaine-line.el --- A customized mode-line for Emacs with Evil status and advanced customizations
+;;; cocaine-line.el --- A customized modeline for Emacs with Evil status and advanced customizations
 
 ;; Author: Mikael Konradsson
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "25.1") (evil "1.0.0"))
 
 ;;; Commentary:
-;; This package offers a customized mode-line for Emacs with Evil status,
+;; This package offers a customized modeline for Emacs with Evil status,
 ;; configurable colors, and the ability to customize displayed information.
 
 ;;; Code:
@@ -22,7 +22,7 @@
 (unless (bound-and-true-p battery-status-function)
   (battery-update-handler))
 
-(defvar-local cocaine-line-is-active nil
+(defvar-local cocaine-line-is-active t
   "Indicates if the current window is active.")
 
 (defgroup cocaine-line nil
@@ -74,11 +74,6 @@
   :type 'boolean
   :group 'cocaine-line)
 
-(defface cocaine-line-inactive-face
-  '((t :inherit mode-line-inactive))
-  "Face for inactive mode-line elements."
-  :group 'cocaine-line)
-
 (defface cocaine-line-buffer-name-face
   '((t :foreground "#a0a0ae" :weight bold))
   "Face for buffer name."
@@ -114,7 +109,7 @@
   "Standard face for project information."
   :group 'cocaine-line)
 
-;; Update Git colors to faces
+;; Git faces customization
 (defcustom cocaine-git-faces
   '((edited . cocaine-line-git-edited-face)
     (added . cocaine-line-git-added-face)
@@ -145,7 +140,7 @@
   "Face for Git conflicts."
   :group 'cocaine-line)
 
-;; Update Evil colors to faces
+;; Evil mode faces customization
 (defcustom cocaine-evil-faces
   '((normal . cocaine-line-evil-normal-face)
     (insert . cocaine-line-evil-insert-face)
@@ -187,7 +182,7 @@
   :group 'cocaine-line)
 
 (defcustom cocaine-line-separator " | "
-  "Separator used between sections in the mode-line."
+  "Separator used between sections in the modeline."
   :type 'string
   :group 'cocaine-line)
 
@@ -200,16 +195,6 @@
   '((t :foreground "#54536D" :weight bold :height 0.8))
   "Face for the separator between sections in cocaine-line."
   :group 'cocaine-line)
-
-(defun cocaine-get-mode-line-inactive-bg ()
-  "Get the background color of the mode-line-inactive face."
-  (face-background 'mode-line-inactive nil t))
-
-(defun cocaine-update-inactive-face ()
-  "Update the cocaine-line-inactive-face with the current mode-line-inactive background color."
-  (let ((bg-color (cocaine-get-mode-line-inactive-bg)))
-    (set-face-attribute 'cocaine-line-inactive-face nil
-                        :box `(:line-width 8 :color ,bg-color))))
 
 (cl-defun cocaine-add-separator (&key str separator leftside (last nil) (face 'cocaine-line-separator-face))
   "Add a separator after STR if it is not empty or last.
@@ -244,7 +229,7 @@
                 'face state-face)))
 
 (defun cocaine-flycheck-mode-line ()
-  "Custom flycheck mode-line with icons and counts."
+  "Custom flycheck modeline with icons and counts."
   (when (and (bound-and-true-p flycheck-mode)
              (or flycheck-current-errors
                  (eq 'running flycheck-last-status-change)))
@@ -387,7 +372,7 @@
         "No battery info"))))
 
 (defun cocaine-left-section ()
-  "Create the left section of the mode-line."
+  "Create the left section of the modeline."
   (let ((left-section (list (concat (cocaine-evil-status)
                                     (cocaine-line-spacer)
                                     (cocaine-buffer-name)
@@ -399,7 +384,7 @@
     left-section))
 
 (defun cocaine-right-section ()
-  "Create the right section of the mode-line."
+  "Create the right section of the modeline."
   (let ((right-section (concat
                         (cocaine-line-col)
                         (cocaine-add-separator :str (cocaine-flycheck-mode-line) :leftside t)
@@ -413,64 +398,37 @@
     (list (propertize " " 'display `((space :align-to (- right ,(string-width right-section)))))
           right-section)))
 
-(defun cocaine-evil-status-inactive ()
-  "Show Evil status with gray face for inactive mode-line."
-  (let* ((evil-state (if (and (bound-and-true-p evil-local-mode)
-                              (boundp 'evil-state))
-                         evil-state
-                       'emacs))
-         (state-name (if (eq evil-state 'emacs)
-                         "EMACS"
-                       (upcase (symbol-name evil-state)))))
-    (propertize (format " %s " state-name)
-                'face 'cocaine-line-inactive-face)))
-
-(defun cocaine-mode-line-inactive-format ()
-  "Inactive format with Evil status and buffer name in gray."
-  (list (concat
-         (cocaine-evil-status-inactive)
-         (propertize "|" 'face 'cocaine-line-inactive-face)
-         (propertize (format " %s " (buffer-name))
-                     'face 'cocaine-line-inactive-face))))
-
 (defun cocaine-mode-line-format ()
-  "Generate the format for cocaine-line mode-line."
+  "Generate the format for cocaine-line modeline."
   (let ((left (cocaine-left-section))
         (right (cocaine-right-section)))
-    (if cocaine-line-is-active
-        (append left right)
-      (cocaine-mode-line-inactive-format))))
+    (append left right)))
 
 (defun cocaine-update-mode-line (&optional _)
-  "Update mode-line for all windows."
-  (let ((active-window (selected-window)))
-    (dolist (frame (frame-list))
-      (dolist (window (window-list frame))
-        (with-current-buffer (window-buffer window)
-          (setq-local cocaine-line-is-active (eq window active-window))
-          (force-mode-line-update window))))))
+  "Update modeline for all windows."
+  (force-mode-line-update t))
 
 (defun cocaine-set-mode-line ()
-  "Set the mode-line format for cocaine-line."
+  "Set the modeline format for cocaine-line."
   (setq-default mode-line-format '(:eval (cocaine-mode-line-format))))
 
 (defun cocaine-register-hooks ()
-  "Register hooks to update the mode-line."
+  "Register hooks to update the modeline."
   (add-hook 'post-command-hook #'cocaine-update-mode-line)
   (add-hook 'window-configuration-change-hook #'cocaine-update-mode-line)
   (add-hook 'focus-in-hook #'cocaine-update-mode-line)
   (add-hook 'focus-out-hook #'cocaine-update-mode-line)
   (add-hook 'window-state-change-hook #'cocaine-update-mode-line)  ; Add this hook
-  (add-hook 'after-load-theme-hook #'cocaine-update-inactive-face))
+  (add-hook 'after-load-theme-hook #'cocaine-update-mode-line))
 
 (defun cocaine-remove-hooks ()
-  "Remove hooks to update the mode-line."
+  "Remove hooks to update the modeline."
   (remove-hook 'post-command-hook #'cocaine-update-mode-line)
   (remove-hook 'window-configuration-change-hook #'cocaine-update-mode-line)
   (remove-hook 'focus-in-hook #'cocaine-update-mode-line)
   (remove-hook 'focus-out-hook #'cocaine-update-mode-line)
   (remove-hook 'window-state-change-hook #'cocaine-update-mode-line)  ; Remove this hook
-  (remove-hook 'after-load-theme-hook #'cocaine-update-inactive-face))
+  (remove-hook 'after-load-theme-hook #'cocaine-update-mode-line))
 
 (define-minor-mode cocaine-line-mode
   "Activate Cocaine Line mode."
