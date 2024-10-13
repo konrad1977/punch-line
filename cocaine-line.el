@@ -402,9 +402,18 @@
            'face face)
         "No battery info"))))
 
+(defun cocaine-evil-mc-info ()
+  "Show Evil MC information."
+  (let ((cursor-count (evil-mc-get-cursor-count))
+        (icon (nerd-icons-octicon "nf-oct-pencil")))
+    (if (> cursor-count 1)
+        (propertize (format " %s %d " icon cursor-count) 'face '(:inherit cocaine-line-evil-replace-face))
+      "")))
+
 (defun cocaine-left-section ()
   "Create the left section of the mode-line."
   (let ((left-section (list (concat (cocaine-evil-status)
+                                    (cocaine-evil-mc-info)
                                     (cocaine-line-spacer)
                                     (cocaine-buffer-name)
                                     (cocaine-add-separator :str (cocaine-major-mode) :separator "|")
