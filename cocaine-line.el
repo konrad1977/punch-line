@@ -18,6 +18,7 @@
 (require 'nerd-icons)
 (require 'project)
 (require 'vc)
+(require 'doom-modeline)
 
 (unless (bound-and-true-p battery-status-function)
   (battery-update-handler))
@@ -209,8 +210,8 @@
         (progn
           (if separator
               (concat (propertize separator 'face face) str)
-            (concat (propertize cocaine-line-separator 'face face) str))
-          ))
+            (concat (propertize cocaine-line-separator 'face face) str))))
+
     str))
 
 ;; Evil status function
@@ -251,9 +252,9 @@
 (defun cocaine-process-info ()
   "Show information about active processes."
   (when cocaine-show-processes-info
-  (let ((process-info (format-mode-line mode-line-process)))
-    (unless (string-blank-p process-info)
-      (string-trim process-info)))))
+   (let ((process-info (format-mode-line mode-line-process)))
+     (unless (string-blank-p process-info)
+       (string-trim process-info)))))
 
 (defun cocaine-misc-info ()
   "Show information about misc info."
@@ -310,6 +311,11 @@
   (let ((project (cocaine-project-name)))
     (propertize project 'face 'cocaine-line-project-face)))
 
+(defface cocaine-modeline-buffer-modified
+  '((t (:inherit (doom-modeline warning bold) :background unspecified :weight bold)))
+  "Face used for the \\='unsaved\\=' symbol in the mode-line."
+  :group 'doom-modeline-faces)
+
 ;; Custom functions for left section
 (defun cocaine-buffer-name ()
   "Show buffer name with custom face and icon (if available)."
@@ -317,9 +323,12 @@
          (icon (when (and cocaine-show-use-nerd-icons file-name)
                  (nerd-icons-icon-for-file file-name t)))
          (buffer-name (file-name-sans-extension
-                       (substring-no-properties (format-mode-line "%b ")))))
+                       (substring-no-properties (format-mode-line "%b "))))
+         (face (if (buffer-modified-p)
+                   'cocaine-modeline-buffer-modified
+                 'cocaine-line-buffer-name-face)))
     (if icon
-        (concat icon " " (propertize buffer-name 'face 'cocaine-line-buffer-name-face))
+        (concat icon " " (propertize buffer-name 'face face))
       (propertize buffer-name 'face 'cocaine-line-buffer-name-face))))
 
 (defun cocaine-major-mode ()
@@ -379,8 +388,8 @@
                                     (cocaine-add-separator :str (cocaine-major-mode) :separator "|")
                                     (cocaine-add-separator :str (cocaine-eglot-info))
                                     (cocaine-add-separator :str (mode-line-segment-hud))
-                                    (cocaine-process-info)
-                                    ))))
+                                    (cocaine-process-info)))))
+
     left-section))
 
 (defun cocaine-right-section ()
@@ -393,8 +402,8 @@
                         (cocaine-misc-info)
                         (cocaine-add-separator :str (cocaine-git-info) :leftside t)
                         (cocaine-add-separator :str (cocaine-battery-info) :leftside t)
-                        (cocaine-time)
-                        )))
+                        (cocaine-time))))
+
     (list (propertize " " 'display `((space :align-to (- right ,(string-width right-section)))))
           right-section)))
 
@@ -439,11 +448,12 @@
       (progn
         (cocaine-set-mode-line)
         (cocaine-register-hooks)
-        (cocaine-update-inactive-face)
         (cocaine-update-mode-line))
     (setq-default mode-line-format (default-value 'mode-line-format))
     (cocaine-remove-hooks)
     (force-mode-line-update t)))
+
+
 
 (provide 'cocaine-line)
 ;;; cocaine-line.el ends here
