@@ -314,7 +314,7 @@
 (defun cocaine-project-info ()
   "Show project information."
   (let ((project (cocaine-project-name)))
-    (propertize project 'face 'cocaine-modeline-project-dir)))
+    (propertize project 'face 'doom-modeline-buffer-file)))
 
 (defface cocaine-modeline-buffer-modified
   '((t (:inherit (doom-modeline warning bold) :background unspecified :weight bold)))
@@ -390,7 +390,9 @@
   (let ((left-section (list (concat (cocaine-evil-status)
                                     (cocaine-line-spacer)
                                     (cocaine-buffer-name)
-                                    (cocaine-add-separator :str (cocaine-major-mode) :separator "|")
+                                    (cocaine-add-separator :str
+                                                           (cocaine-major-mode)
+                                                           :separator " | ")
                                     (cocaine-add-separator :str (cocaine-eglot-info))
                                     (cocaine-add-separator :str (mode-line-segment-hud))
                                     (cocaine-process-info)))))
