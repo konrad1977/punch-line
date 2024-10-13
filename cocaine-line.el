@@ -49,6 +49,11 @@
   :type 'boolean
   :group 'cocaine-line)
 
+(defcustom cocaine-battery-show-percentage t
+  "When non-nil, display battery percentage as text after the icon."
+  :type 'boolean
+  :group 'cocaine)
+
 (defcustom cocaine-show-use-nerd-icons t
   "If set to t, show file icons with nerdicons."
   :type 'boolean
@@ -366,7 +371,7 @@
   (propertize (format-time-string "%H:%M") 'face 'cocaine-line-time-face))
 
 (defun cocaine-battery-info ()
-  "Show battery percentage or charging status using text and nerd-font icons on macOS."
+  "Show battery percentage or charging status using text and nerd-font icons on macOS with face-based coloring."
   (when (and cocaine-show-battery-info
              (bound-and-true-p display-battery-mode))
     (let* ((battery-plist (funcall battery-status-function))
@@ -379,11 +384,22 @@
                   ((>= percentage 62.5) (nerd-icons-faicon "nf-fa-battery_3"))
                   ((>= percentage 37.5) (nerd-icons-faicon "nf-fa-battery_2"))
                   ((>= percentage 12.5) (nerd-icons-faicon "nf-fa-battery_1"))
-                  (t (nerd-icons-faicon "nf-fa-battery_0")))))
+                  (t (nerd-icons-faicon "nf-fa-battery_0"))))
+           (face (cond
+                  (charging 'success)
+                  ((<= percentage 10) 'error)
+                  ((<= percentage 30) 'warning)
+                  (t 'success)))
+           (percentage-text (if cocaine-battery-show-percentage
+                                (format " %d%%" percentage)
+                              "")))
       (if (and percentage status)
-          (format "%s"
-                  icon
-                  (if charging " (Charging)" ""))
+          (propertize
+           (format "%s %s%s%%"
+                   icon
+                   percentage-text
+                   (if charging " (Charging)" ""))
+           'face face)
         "No battery info"))))
 
 (defun cocaine-left-section ()
