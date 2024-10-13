@@ -401,13 +401,13 @@
   "Create the right section of the modeline."
   (let ((right-section (concat
                         (cocaine-line-col)
-                        (doom-modeline-segment--salih/word-count)
-                        (doom-modeline-segment--salih/selection-info)
-                        (doom-modeline-segment--matches)
-                        (doom-modeline-segment--buffer-position)
-                        (doom-modeline-segment--mu4e)
-                        (doom-modeline-segment--lsp)
-                        (doom-modeline-segment--minor-modes)
+                        (cocaine-add-separator :str (doom-modeline-segment--salih/word-count) :leftside t)
+                        (cocaine-add-separator :str (doom-modeline-segment--salih/selection-info) :leftside t)
+                        (cocaine-add-separator :str (doom-modeline-segment--matches) :leftside t)
+                        (cocaine-add-separator :str (doom-modeline-segment--buffer-position) :leftside t)
+                        (cocaine-add-separator :str (doom-modeline-segment--mu4e) :leftside t)
+                        (cocaine-add-separator :str (doom-modeline-segment--lsp) :leftside t)
+                        (cocaine-add-separator :str (doom-modeline-segment--minor-modes) :leftside t)
                         (cocaine-add-separator :str (cocaine-flycheck-mode-line) :leftside t)
                         (cocaine-buffer-position)
                         (cocaine-add-separator :str (cocaine-copilot-info) :leftside t)
@@ -415,7 +415,7 @@
                         (cocaine-add-separator :str (cocaine-git-info) :leftside t)
                         (cocaine-add-separator :str (cocaine-battery-info) :leftside t)
                         (cocaine-time)
-                        (cocaine-add-separator :str (salih/awqat-update) :leftside nil))))
+                        (cocaine-add-separator :str awqat-mode-line-string :leftside nil))))
 
 
     (list (propertize " " 'display `((space :align-to (- right ,(string-width right-section)))))
