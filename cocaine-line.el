@@ -1,4 +1,4 @@
-;;; cocaine-line.el --- A customized mode-line for Emacs with Evil status and advanced customizations
+;;; cocaine-line.el --- A customized mode-line for Emacs with Evil status and advanced customizations -*- lexical-binding: t; -*-
 
 ;; Author: Mikael Konradsson
 ;; Version: 1.0
@@ -9,15 +9,17 @@
 ;; configurable colors, and the ability to customize displayed information.
 
 ;;; Code:
-
+(require 'async)
 (require 'all-the-icons)
 (require 'battery)
 (require 'cl-lib)
 (require 'evil)
-(require 'mode-line-hud)
 (require 'nerd-icons)
 (require 'project)
 (require 'vc)
+
+(require 'cocaine-line-music)
+(require 'mode-line-hud)
 
 (unless (bound-and-true-p battery-status-function)
   (battery-update-handler))
@@ -292,7 +294,7 @@
   (if (bound-and-true-p eglot--managed-mode)
       (let* ((server (eglot-current-server))
              (nick (and server (eglot--project-nickname server)))
-             (icon (propertize (nerd-icons-octicon "nf-oct-plug")
+             (icon (propertize (nerd-icons-codicon "nf-cod-pulse")
                                'face 'cocaine-line-eglot-icon-face)))
         (if server
             (concat (propertize (or nick "") 'face 'cocaine-line-project-face) " " icon " ")
@@ -377,7 +379,7 @@
     (let* ((battery-plist (funcall battery-status-function))
            (percentage (string-to-number (battery-format "%p" battery-plist)))
            (status (battery-format "%B" battery-plist))
-           (charging (string= status "AC"))
+           (charging (or (string= status "AC") (string= status "charging")))
            (icon (cond
                   (charging (nerd-icons-faicon "nf-fa-plug"))
                   ((>= percentage 87.5) (nerd-icons-faicon "nf-fa-battery"))
@@ -395,10 +397,9 @@
                               "")))
       (if (and percentage status)
           (propertize
-           (format "%s %s%s%%"
+           (format "%s %s%%"
                    icon
-                   percentage-text
-                   (if charging " (Charging)" ""))
+                   percentage-text)
            'face face)
         "No battery info"))))
 
@@ -426,6 +427,7 @@
 (defun cocaine-right-section ()
   "Create the right section of the mode-line."
   (let ((right-section (concat
+                        (cocaine-add-separator :str (cocaine-line-music-info) :leftside t)
                         (cocaine-line-col)
                         (cocaine-add-separator :str (cocaine-flycheck-mode-line) :leftside t)
                         (cocaine-buffer-position)

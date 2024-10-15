@@ -66,5 +66,4 @@
                     (force-mode-line-update))))
 
 (provide 'mode-line-hud)
-
 ;;; mode-line-hud.el ends here
