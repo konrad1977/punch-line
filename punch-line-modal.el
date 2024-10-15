@@ -13,7 +13,7 @@
 (require 'evil-mc)
 (require 'nerd-icons)
 
-(defcustom punch-line-show-evil-modes nil
+(defcustom punch-line-show-evil-modes t
   "Show Evil modes in the mode-line."
   :type 'boolean
   :group 'punch-line)

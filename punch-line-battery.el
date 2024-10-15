@@ -16,15 +16,19 @@
 (unless (bound-and-true-p battery-status-function)
   (battery-update-handler))
 
+(defgroup punch-battery nil
+  "Customization group for punch-line-battery."
+  :group 'punch-line)
+
 (defcustom punch-battery-show-percentage t
   "When non-nil, display battery percentage as text after the icon."
   :type 'boolean
-  :group 'punch)
+  :group 'punch-battery)
 
 (defcustom punch-show-battery-info t
   "If set to t, show battery icons with nerdicons."
   :type 'boolean
-  :group 'punch-line)
+  :group 'punch-battery)
 
 (defun punch-battery-info ()
   "Show battery percentage or charging status using text and nerd-font icons on macOS with face-based coloring."

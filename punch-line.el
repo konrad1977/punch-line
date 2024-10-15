@@ -17,6 +17,8 @@
 (require 'punch-line-modal)
 (require 'punch-line-battery)
 (require 'punch-line-misc)
+(require 'punch-line-weather)
+
 (require 'mode-line-hud)
 
 (defvar-local punch-line-is-active nil
@@ -86,6 +88,7 @@ FACE specifies which face to use for the separator."
                         (punch-buffer-position)
                         (punch-add-separator :str (punch-copilot-info) :leftside t)
                         (punch-misc-info)
+                        (punch-add-separator :str (punch-weather-info) :leftside t)
                         (punch-add-separator :str (punch-git-info) :leftside t)
                         (punch-add-separator :str (punch-battery-info) :leftside t)
                         (punch-time-info)

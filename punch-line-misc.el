@@ -14,6 +14,9 @@
 (require 'nerd-icons)
 (require 'project)
 
+(when (featurep 'projectile)
+  (require 'projectile))
+
 (defcustom punch-show-processes-info t
   "If set to t, show active processes."
   :type 'boolean
@@ -39,11 +42,15 @@
   :type 'boolean
   :group 'punch-line)
 
+(defcustom punch-show-project-info t
+  "If set to t, show project information."
+  :type 'boolean
+  :group 'punch-line)
+
 (defcustom punch-show-buffer-position nil
   "If set to t, show buffer position."
   :type 'boolean
   :group 'punch-line)
-
 
 (defun punch-flycheck-mode-line ()
   "Custom flycheck mode-line with icons and counts."
@@ -80,15 +87,16 @@
 
 (defun punch-eglot-info ()
   "Return current Eglot status for the mode line using nerd-icons."
-  (if (bound-and-true-p eglot--managed-mode)
-      (let* ((server (eglot-current-server))
-             (nick (and server (eglot--project-nickname server)))
-             (icon (propertize (nerd-icons-codicon "nf-cod-pulse")
-                               'face 'punch-line-eglot-icon-face)))
-        (if server
-            (concat (propertize (or nick "") 'face 'punch-line-project-face) " " icon " ")
-          icon))
-    (punch-project-info)))
+  (when punch-show-project-info
+    (if (bound-and-true-p eglot--managed-mode)
+        (let* ((server (eglot-current-server))
+               (nick (and server (eglot--project-nickname server)))
+               (icon (propertize (nerd-icons-codicon "nf-cod-pulse")
+                                 'face 'punch-line-eglot-icon-face)))
+          (if server
+              (concat (propertize (or nick "") 'face 'punch-line-project-face) " " icon " ")
+            icon))
+      (punch--project-name))))
 
 (defun punch-project-name ()
   "Get the project name if any."
@@ -99,7 +107,7 @@
    (and (fboundp 'projectile-project-name)
         (projectile-project-name))))
 
-(defun punch-project-info ()
+(defun punch--project-name ()
   "Show project information."
   (let ((project (punch-project-name)))
     (propertize project 'face 'punch-line-project-face)))
@@ -138,7 +146,7 @@
 
 (defun punch-line-spacer ()
   "Show an empty string."
-  (propertize " "))
+  " ")
 
 (defun punch-time-info ()
   "Show time with custom face."
