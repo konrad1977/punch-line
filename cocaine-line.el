@@ -81,7 +81,7 @@
   :group 'cocaine-line)
 
 (defface cocaine-line-major-mode-face
-  '((t :foreground "#888899"))
+  '((t :inherit doom-modeline-buffer-major-mode :weight bold))
   "Face for major mode."
   :group 'cocaine-line)
 
@@ -315,7 +315,7 @@
 (defun cocaine-project-info ()
   "Show project information."
   (let ((project (cocaine-project-name)))
-    (propertize project 'face 'doom-modeline-buffer-file)))
+    (propertize project 'face 'doom-modeline-project-parent-dir)))
 
 (defface cocaine-modeline-buffer-modified
   '((t (:inherit (doom-modeline warning bold) :background unspecified :weight bold)))
@@ -332,10 +332,10 @@
                        (substring-no-properties (format-mode-line "%b "))))
          (face (if (buffer-modified-p)
                    'cocaine-modeline-buffer-modified
-                 'cocaine-line-buffer-name-face)))
+                 'doom-modeline-buffer-file)))
     (if icon
         (concat icon " " (propertize buffer-name 'face face))
-      (propertize buffer-name 'face 'cocaine-line-buffer-name-face))))
+      (propertize buffer-name 'face 'doom-modeline-buffer-file))))
 
 (defun cocaine-major-mode ()
   "Show major mode with custom face."
@@ -363,7 +363,7 @@
 
 (defun cocaine-time ()
   "Show time with custom face."
-  (propertize (format-time-string "%H:%M") 'face 'cocaine-line-time-face))
+  (propertize (format-time-string "%H:%M") 'face 'doom-modeline-time))
 
 (defun cocaine-battery-info ()
   "Show battery percentage or charging status using text and nerd-font icons on macOS."
@@ -388,21 +388,25 @@
 
 (defun cocaine-left-section ()
   "Create the left section of the modeline."
-  (let ((left-section (list (concat (cocaine-evil-status)
-                                    (cocaine-line-spacer)
-                                    (cocaine-buffer-name)
-                                    (cocaine-add-separator :str
-                                                           (cocaine-major-mode)
-                                                           :separator " | ")
-                                    (cocaine-add-separator
-                                     :str
-                                     (if (derived-mode-p
-                                          'pdf-view-mode)
-                                         (concat " " (salih/doom-modeline-update-pdf-pages-only-percent))
-                                       (doom-modeline-segment--buffer-position))
-                                     :leftside t)
-                                    (cocaine-add-separator :str (mode-line-segment-hud))
-                                    (cocaine-process-info)))))
+  (let ((left-section
+         (list
+          (concat
+           (cocaine-evil-status)
+           (cocaine-line-spacer)
+           (cocaine-buffer-name)
+           (cocaine-add-separator :str
+                                  (cocaine-major-mode)
+                                  :separator " | ")
+           (cocaine-add-separator
+            :str
+            (if (derived-mode-p
+                 'pdf-view-mode)
+                (concat " " (salih/doom-modeline-update-pdf-pages-only-percent))
+              (substring (doom-modeline-segment--buffer-position) 2)))
+
+           (cocaine-add-separator :str (mode-line-segment-hud))
+           (cocaine-add-separator :str (cocaine-process-info))))))
+
 
     left-section))
 (defun cocaine-right-section ()
