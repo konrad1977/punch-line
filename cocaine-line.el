@@ -81,6 +81,11 @@
   :type 'boolean
   :group 'cocaine-line)
 
+(defcustom cocaine-line-show-time-info t
+  "If set to t, show time."
+  :type 'boolean
+  :group 'cocaine-line)
+
 (defface cocaine-line-inactive-face
   '((t :inherit mode-line-inactive))
   "Face for inactive mode-line elements."
@@ -152,17 +157,6 @@
   "Face for Git conflicts."
   :group 'cocaine-line)
 
-;; Update Evil colors to faces
-(defcustom cocaine-evil-faces
-  '((normal . cocaine-line-evil-normal-face)
-    (insert . cocaine-line-evil-insert-face)
-    (visual . cocaine-line-evil-visual-face)
-    (replace . cocaine-line-evil-replace-face)
-    (emacs . cocaine-line-evil-emacs-face))
-  "Faces for different Evil states."
-  :type '(alist :key-type symbol :value-type face)
-  :group 'cocaine-line)
-
 (defface cocaine-line-evil-normal-face
   '((t :foreground "#FFFFFF" :background "#2D4F67" :weight bold
        :box (:line-width 8 :color "#2D4F67")))
@@ -191,6 +185,17 @@
   '((t :foreground "#333333" :background "#B0C4DE" :weight bold
        :box (:line-width 8 :color "#B0C4DE")))
   "Face for Emacs state."
+  :group 'cocaine-line)
+
+;; Update Evil colors to faces
+(defcustom cocaine-evil-faces
+  '((normal . cocaine-line-evil-normal-face)
+    (insert . cocaine-line-evil-insert-face)
+    (visual . cocaine-line-evil-visual-face)
+    (replace . cocaine-line-evil-replace-face)
+    (emacs . cocaine-line-evil-emacs-face))
+  "Faces for different Evil states."
+  :type '(alist :key-type symbol :value-type face)
   :group 'cocaine-line)
 
 (defcustom cocaine-line-separator " | "
@@ -261,7 +266,7 @@
            (error (or (cdr (assq 'error count)) 0)))
       (concat
        (when (> info 0)
-         (propertize (format " %s %d" (nerd-icons-codicon "nf-cod-lightbulb") info)
+         (propertize (format "%s %d" (nerd-icons-codicon "nf-cod-lightbulb") info)
                      'face '(:inherit success)))
        (when (> warning 0)
          (propertize (format " %s %d" (nerd-icons-codicon "nf-cod-warning") warning)
@@ -368,9 +373,10 @@
   "Show an empty string."
   (propertize " "))
 
-(defun cocaine-time ()
+(defun cocaine-time-info ()
   "Show time with custom face."
-  (propertize (format-time-string "%H:%M") 'face 'cocaine-line-time-face))
+  (when cocaine-line-show-time-info
+    (propertize (format-time-string "%H:%M") 'face 'cocaine-line-time-face)))
 
 (defun cocaine-battery-info ()
   "Show battery percentage or charging status using text and nerd-font icons on macOS with face-based coloring."
@@ -435,7 +441,7 @@
                         (cocaine-misc-info)
                         (cocaine-add-separator :str (cocaine-git-info) :leftside t)
                         (cocaine-add-separator :str (cocaine-battery-info) :leftside t)
-                        (cocaine-time)
+                        (cocaine-time-info)
                         )))
     (list (propertize " " 'display `((space :align-to (- right ,(string-width right-section)))))
           right-section)))

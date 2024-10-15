@@ -27,6 +27,11 @@ If a plist, it can contain the following properties:
                         :options ((:service (choice (const apple) (const spotify))))))
   :group 'cocaine-line)
 
+(defface cocaine-line-music-face
+  '((t :foreground "#888899" :weight normal :height 0.9))
+  "Face for inactive mode-line elements."
+  :group 'cocaine-line)
+
 (defvar cocaine-music-info-cache "No music playing"
   "Cache for music information.")
 
@@ -49,7 +54,7 @@ tell application \"System Events\"
       if player state is playing then
         set track_name to name of current track
         set artist_name to artist of current track
-        return track_name & \"|\" & artist_name
+        return track_name & \"•\" & artist_name
       else
         return \"No music playing\"
       end if
@@ -92,7 +97,7 @@ end tell" app-name app-name)))
                              (buffer-string))))
                (setq cocaine-music-info-cache
                      (when (not (string-empty-p (string-trim output)))
-                       (concat " " (cocaine-line-icon) " " (string-trim output))))
+                       (concat " " (cocaine-line-icon) " " (propertize (string-trim output) 'face 'cocaine-line-music-face))))
                (force-mode-line-update t)))
            ;; Clean up process buffer after we're done with it
            (kill-buffer (process-buffer proc))))))))
