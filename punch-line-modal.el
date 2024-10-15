@@ -13,7 +13,7 @@
 (require 'evil-mc)
 (require 'nerd-icons)
 
-(defcustom punch-line-show-evil-modes t
+(defcustom punch-line-show-evil-modes nil
   "Show Evil modes in the mode-line."
   :type 'boolean
   :group 'punch-line)
@@ -42,7 +42,7 @@
 ;; Evil status function
 (defun punch-evil-status ()
   "Show Evil status with custom face and correct vertical alignment."
-  (when punch-line-show-evil-modes
+  (if punch-line-show-evil-modes
     (let* ((evil-state (if (and (bound-and-true-p evil-local-mode)
                                 (boundp 'evil-state)
                                 )
@@ -52,7 +52,8 @@
                          'punch-line-evil-emacs-face))
            (state-name (upcase (symbol-name evil-state))))
       (propertize (format " %s " state-name)
-                  'face state-face))))
+                  'face state-face))
+    (propertize " " 'face 'punch-line-evil-normal-face)))
 
 (defun punch-evil-mc-info ()
   "Show Evil MC information."
