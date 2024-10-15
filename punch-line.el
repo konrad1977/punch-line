@@ -16,9 +16,11 @@
 (require 'evil)
 (require 'nerd-icons)
 (require 'project)
-(require 'vc)
 
+(require 'punch-line-colors)
+(require 'punch-line-vc)
 (require 'punch-line-music)
+(require 'punch-line-modal)
 (require 'mode-line-hud)
 
 (unless (bound-and-true-p battery-status-function)
@@ -71,11 +73,6 @@
   :type 'boolean
   :group 'punch-line)
 
-(defcustom punch-show-git-info t
-  "If set to t, show Git branch and status."
-  :type 'boolean
-  :group 'punch-line)
-
 (defcustom punch-show-copilot-info t
   "If set to t, show copilot icon."
   :type 'boolean
@@ -86,118 +83,6 @@
   :type 'boolean
   :group 'punch-line)
 
-(defface punch-line-inactive-face
-  '((t :inherit mode-line-inactive))
-  "Face for inactive mode-line elements."
-  :group 'punch-line)
-
-(defface punch-line-buffer-name-face
-  '((t :foreground "#a0a0ae" :weight bold))
-  "Face for buffer name."
-  :group 'punch-line)
-
-(defface punch-line-major-mode-face
-  '((t :foreground "#888899"))
-  "Face for major mode."
-  :group 'punch-line)
-
-(defface punch-line-position-face
-  '((t :foreground "#FFA07A"))
-  "Face for buffer position."
-  :group 'punch-line)
-
-(defface punch-line-time-face
-  '((t :foreground "#888899":weight light))
-  "Face for time display."
-  :group 'punch-line)
-
-(defface punch-line-git-face
-  '((t :foreground "#a0a0ae"))
-  "Standard face for Git information."
-  :group 'punch-line)
-
-(defface punch-line-project-face
-  '((t :foreground "#FFA066" :weight bold))
-  "Standard face for project information."
-  :group 'punch-line)
-
-(defface punch-line-eglot-icon-face
-  '((t :inherit eglot-mode-line))
-  "Standard face for project information."
-  :group 'punch-line)
-
-;; Update Git colors to faces
-(defcustom punch-git-faces
-  '((edited . punch-line-git-edited-face)
-    (added . punch-line-git-added-face)
-    (removed . punch-line-git-removed-face)
-    (conflict . punch-line-git-conflict-face)
-    (default . punch-line-git-face))
-  "Faces for different Git states."
-  :type '(alist :key-type symbol :value-type face)
-  :group 'punch-line)
-
-(defface punch-line-git-edited-face
-  '((t :foreground "#F1FA8C"))
-  "Face for edited Git files."
-  :group 'punch-line)
-
-(defface punch-line-git-added-face
-  '((t :foreground "#50FA7B"))
-  "Face for added Git files."
-  :group 'punch-line)
-
-(defface punch-line-git-removed-face
-  '((t :foreground "#FF5555"))
-  "Face for removed Git files."
-  :group 'punch-line)
-
-(defface punch-line-git-conflict-face
-  '((t :foreground "#FF79C6"))
-  "Face for Git conflicts."
-  :group 'punch-line)
-
-(defface punch-line-evil-normal-face
-  '((t :foreground "#FFFFFF" :background "#2D4F67" :weight bold
-       :box (:line-width 8 :color "#2D4F67")))
-  "Face for Evil normal state."
-  :group 'punch-line)
-
-(defface punch-line-evil-insert-face
-  '((t :foreground "#333333" :background "#E6C384" :weight bold
-       :box (:line-width 8 :color "#E6C384")))
-  "Face for Evil insert state."
-  :group 'punch-line)
-
-(defface punch-line-evil-visual-face
-  '((t :foreground "#333333" :background "#D27E99" :weight bold
-       :box (:line-width 8 :color "#D27E99")))
-  "Face for Evil visual state."
-  :group 'punch-line)
-
-(defface punch-line-evil-replace-face
-  '((t :foreground "#333333" :background "#FF5D62" :weight bold
-       :box (:line-width 8 :color "#FF5D62")))
-  "Face for Evil replace state."
-  :group 'punch-line)
-
-(defface punch-line-evil-emacs-face
-  '((t :foreground "#333333" :background "#B0C4DE" :weight bold
-       :box (:line-width 8 :color "#B0C4DE")))
-  "Face for Emacs state."
-  :group 'punch-line)
-
-;; Update Evil colors to faces
-(defcustom punch-evil-faces
-  '((normal . punch-line-evil-normal-face)
-    (insert . punch-line-evil-insert-face)
-    (visual . punch-line-evil-visual-face)
-    (replace . punch-line-evil-replace-face)
-    (emacs . punch-line-evil-emacs-face))
-  "Faces for different Evil states."
-  :type '(alist :key-type symbol :value-type face)
-  :group 'punch-line)
-
 (defcustom punch-line-separator " | "
   "Separator used between sections in the mode-line."
   :type 'string
@@ -206,11 +91,6 @@
 (defcustom punch-line-separator-face 'punch-line-separator-face
   "Face for the separator between sections."
   :type 'face
-  :group 'punch-line)
-
-(defface punch-line-separator-face
-  '((t :foreground "#54536D" :weight bold :height 0.8))
-  "Face for the separator between sections in punch-line."
   :group 'punch-line)
 
 (defun punch-get-mode-line-inactive-bg ()
@@ -224,9 +104,10 @@
                         :box `(:line-width 8 :color ,bg-color))))
 
 (cl-defun punch-add-separator (&key str separator leftside (last nil) (face 'punch-line-separator-face))
+  "Add a separator after STR if it is not empty or last."
   "Add a separator after STR if it is not empty or last.
-    LAST indicates if this is the last element.
-    FACE specifies which face to use for the separator."
+LAST indicates if this is the last element.
+FACE specifies which face to use for the separator."
   (if (and str (not (string-empty-p str)) (not last))
       (if leftside
           (progn
@@ -239,21 +120,6 @@
             (concat (propertize punch-line-separator 'face face) str))
           ))
     str))
-
-;; Evil status function
-(defun punch-evil-status ()
-  "Show Evil status with custom face and correct vertical alignment."
-  (let* ((evil-state (if (and (bound-and-true-p evil-local-mode)
-                              (boundp 'evil-state))
-                         evil-state
-                       'emacs))
-         (state-face (or (cdr (assq evil-state punch-evil-faces))
-                         'punch-line-evil-emacs-face))
-         (state-name (if (eq evil-state 'emacs)
-                         "EMACS"
-                       (upcase (symbol-name evil-state)))))
-    (propertize (format " %s " state-name)
-                'face state-face)))
 
 (defun punch-flycheck-mode-line ()
   "Custom flycheck mode-line with icons and counts."
@@ -278,9 +144,8 @@
 (defun punch-process-info ()
   "Show information about active processes."
   (when punch-show-processes-info
-  (let ((process-info (format-mode-line mode-line-process)))
-    (unless (string-blank-p process-info)
-      (string-trim process-info)))))
+    (let ((process-info (format-mode-line mode-line-process)))
+        process-info)))
 
 (defun punch-misc-info ()
   "Show information about misc info."
@@ -288,11 +153,6 @@
     (let ((misc-info (format-mode-line mode-line-misc-info)))
       (unless (string-blank-p misc-info)
         (string-trim misc-info)))))
-
-(defun punch-vc--rev (file backend)
-  "Get the revision for FILE in BACKEND."
-  (when-let ((rev (vc-working-revision file backend)))
-    (substring rev 0 (min (length rev) 7))))
 
 (defun punch-eglot-info ()
   "Return a string representing the current Eglot status for the mode line using nerd-icons."
@@ -305,23 +165,6 @@
             (concat (propertize (or nick "") 'face 'punch-line-project-face) " " icon " ")
           icon))
     (punch-project-info)))
-
-(defun punch-git-info ()
-  "Show Git branch and status with custom faces."
-  (when (and punch-show-git-info
-             (buffer-file-name)
-             (vc-git-registered (buffer-file-name)))
-    (let* ((branch (vc-git-mode-line-string (buffer-file-name)))
-           (state (vc-state (buffer-file-name)))
-           (state-face (alist-get state punch-git-faces
-                                  (alist-get 'default punch-git-faces)))
-           (status-indicator (if (eq state 'up-to-date) "" "")))
-      (when branch
-        (propertize (format "%s %s%s"
-                            (nerd-icons-octicon "nf-oct-git_branch")
-                            (replace-regexp-in-string "^Git[:-]" "" branch)
-                            status-indicator)
-                    'face state-face)))))
 
 (defun punch-project-name ()
   "Get the project name if any."
@@ -399,7 +242,7 @@
                   ((<= percentage 30) 'warning)
                   (t 'success)))
            (percentage-text (if punch-battery-show-percentage
-                                (format "%d%%" percentage)
+                                (format " %d%%" percentage)
                               "")))
       (if (and percentage status)
           (propertize
@@ -408,14 +251,6 @@
                    percentage-text)
            'face face)
         "No battery info"))))
-
-(defun punch-evil-mc-info ()
-  "Show Evil MC information."
-  (let ((cursor-count (evil-mc-get-cursor-count))
-        (icon (nerd-icons-octicon "nf-oct-pencil")))
-    (if (> cursor-count 1)
-        (propertize (format " %s %d " icon cursor-count) 'face '(:inherit punch-line-evil-replace-face))
-      "")))
 
 (defun punch-left-section ()
   "Create the left section of the mode-line."
@@ -446,17 +281,6 @@
     (list (propertize " " 'display `((space :align-to (- right ,(string-width right-section)))))
           right-section)))
 
-(defun punch-evil-status-inactive ()
-  "Show Evil status with gray face for inactive mode-line."
-  (let* ((evil-state (if (and (bound-and-true-p evil-local-mode)
-                              (boundp 'evil-state))
-                         evil-state
-                       'emacs))
-         (state-name (if (eq evil-state 'emacs)
-                         "EMACS"
-                       (upcase (symbol-name evil-state)))))
-    (propertize (format " %s " state-name)
-                'face 'punch-line-inactive-face)))
 
 (defun punch-mode-line-inactive-format ()
   "Inactive format with Evil status and buffer name in gray."

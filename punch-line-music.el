@@ -28,11 +28,11 @@ If a plist, it can contain the following properties:
   :group 'punch-line)
 
 (defface punch-line-music-face
-  '((t :foreground "#888899" :weight normal :height 0.9))
+  '((t :foreground "#888899" :weight normal))
   "Face for inactive mode-line elements."
   :group 'punch-line)
 
-(defvar punch-music-info-cache "No music playing"
+(defvar punch-music-info-cache ""
   "Cache for music information.")
 
 (defvar punch-music-info-last-update 0
@@ -54,9 +54,9 @@ tell application \"System Events\"
       if player state is playing then
         set track_name to name of current track
         set artist_name to artist of current track
-        return track_name & \"•\" & artist_name
+        return track_name & \" • \" & artist_name
       else
-        return \"No music playing\"
+        return \"\"
       end if
     end tell
   else
@@ -96,7 +96,8 @@ end tell" app-name app-name)))
              (let ((output (with-current-buffer (process-buffer proc)
                              (buffer-string))))
                (setq punch-music-info-cache
-                     (when (not (string-empty-p (string-trim output)))
+                     (if (string-empty-p (string-trim output))
+                         ""
                        (concat " " (punch-line-icon) " " (propertize (string-trim output) 'face 'punch-line-music-face))))
                (force-mode-line-update t)))
            ;; Clean up process buffer after we're done with it
