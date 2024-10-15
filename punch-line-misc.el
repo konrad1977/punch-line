@@ -79,7 +79,7 @@
         (string-trim misc-info)))))
 
 (defun punch-eglot-info ()
-  "Return a string representing the current Eglot status for the mode line using nerd-icons."
+  "Return current Eglot status for the mode line using nerd-icons."
   (if (bound-and-true-p eglot--managed-mode)
       (let* ((server (eglot-current-server))
              (nick (and server (eglot--project-nickname server)))
@@ -144,3 +144,6 @@
   "Show time with custom face."
   (when punch-line-show-time-info
     (propertize (format-time-string "%H:%M") 'face 'punch-line-time-face)))
+
+(provide 'punch-line-misc)
+;;; punch-line-misc.el ends here
