@@ -28,8 +28,18 @@ If a plist, it can contain the following properties:
   :group 'punch-line)
 
 (defface punch-line-music-face
-  '((t :foreground "#888899" :weight normal))
+  '((t (:inherit font-lock-comment-face)))
   "Face for inactive mode-line elements."
+  :group 'punch-line)
+
+(defface punch-line-music-apple-face
+  '((t (:foreground "#ff2d55")))
+  "Face for apple music mode-line elements."
+  :group 'punch-line)
+
+(defface punch-line-music-spotify-face
+  '((t (:foreground "#1db954")))
+  "Face for spotify mode-line elements."
   :group 'punch-line)
 
 (defvar punch-music-info-cache ""
@@ -60,12 +70,12 @@ tell application \"System Events\"
       end if
     end tell
   else
-    return \"Application not running\"
+    return \"\"
   end if
 end tell" app-name app-name)))
 
 (defun punch-line-get-music-service ()
-  "Get the configured music service or default to 'apple."
+  "Get the configured music service or default to apple."
   (cond
    ((null punch-line-music-info) nil)
    ((eq punch-line-music-info t) 'apple)
@@ -107,23 +117,21 @@ end tell" app-name app-name)))
   "Return the icon for the music service."
   (let ((service (punch-line-get-music-service)))
     (cond
-     ((eq service 'apple) (nerd-icons-faicon "nf-fa-music" :v-adjust 0.1))
-     ((eq service 'spotify) (nerd-icons-faicon "nf-fa-spotify" :v-adjust 0.0))
+     ((eq service 'apple) (propertize (nerd-icons-faicon "nf-fa-music") 'face 'punch-line-music-apple-face))
+     ((eq service 'spotify) (propertize (nerd-icons-faicon "nf-fa-spotify") 'face 'punch-line-music-spotify-face))
      (t ))))
 
 (defun punch-line-start-music-info-timer ()
   "Start the timer for updating music information."
   (when (and punch-line-music-info (null punch-music-info-timer))
     (setq punch-music-info-timer
-          (run-at-time 0 punch-music-info-update-interval #'punch-line-update-music-info-async))
-    (message "Started punch-line music info timer")))
+          (run-at-time 0 punch-music-info-update-interval #'punch-line-update-music-info-async))))
 
 (defun punch-line-stop-music-info-timer ()
   "Stop the timer for updating music information."
   (when punch-music-info-timer
     (cancel-timer punch-music-info-timer)
-    (setq punch-music-info-timer nil)
-    (message "Stopped punch-line music info timer")))
+    (setq punch-music-info-timer nil)))
 
 (defun punch-line-get-music-info ()
   "Get the current cached music info."
@@ -131,11 +139,12 @@ end tell" app-name app-name)))
 
 (defun punch-line-music-info ()
   "Return the current music info for display in the mode-line."
-  (when punch-line-music-info
+  (when (and punch-line-music-info (punch-line-get-music-service))
     (punch-line-get-music-info)))
 
-(add-hook 'emacs-startup-hook #'punch-line-start-music-info-timer)
-(add-hook 'kill-emacs-hook #'punch-line-stop-music-info-timer)
+(when (eq system-type 'darwin)
+  (add-hook 'emacs-startup-hook #'punch-line-start-music-info-timer)
+  (add-hook 'kill-emacs-hook #'punch-line-stop-music-info-timer))
 
 (provide 'punch-line-music)
 ;;; punch-line-music.el ends here

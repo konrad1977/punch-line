@@ -40,6 +40,18 @@
   "Face for Emacs state."
   :group 'punch-line)
 
+(defface punch-line-macro-face
+  '((t :foreground "#333333" :background "#B0C4DE" :weight bold
+       :box (:line-width 8 :color "#B0C4DE")))
+  "Face for Emacs state."
+  :group 'punch-line)
+
+(defface punch-line-macro-recording-face
+  '((t :foreground "#222233" :background "#FF5D62" :weight bold
+       :box (:line-width 8 :color "#FF5D62")))
+  "Face for Emacs state."
+  :group 'punch-line)
+
 ;;; Git faces
 (defface punch-line-git-edited-face
   '((t :foreground "#F1FA8C"))
@@ -96,8 +108,8 @@
   "Standard face for project information."
   :group 'punch-line)
 
-(defface punch-line-eglot-icon-face
-  '((t :inherit eglot-mode-line))
+(defface punch-line-lsp-icon-face
+  '((t :inherit lsp-mode-line))
   "Standard face for project information."
   :group 'punch-line)
 
@@ -106,6 +118,52 @@
   "Face for the separator between sections in punch-line."
   :group 'punch-line)
 
+(require 'cl-lib)
+
+(cl-defun adjust-colors (base-face &key background-adjust foreground-adjust
+                                        background-color foreground-color
+                                        weight slant underline overline strike-through
+                                        box inverse-video stipple)
+  "Generate a face specification based on BASE-FACE with adjustments.
+Adjusts background by BACKGROUND-ADJUST percent (-100 to 100).
+Adjusts foreground by FOREGROUND-ADJUST percent (-100 to 100).
+Can set specific BACKGROUND-COLOR and/or FOREGROUND-COLOR.
+Additional face attributes (WEIGHT, SLANT, etc.) can be specified."
+  (let* ((base-face-attrs (face-all-attributes base-face nil))
+         (bg (or background-color
+                 (and background-adjust
+                      (adjust-color (or (face-background base-face nil t) "unspecified")
+                                    background-adjust))
+                 (face-background base-face nil t)))
+         (fg (or foreground-color
+                 (and foreground-adjust
+                      (adjust-color (or (face-foreground base-face nil t) "unspecified")
+                                    foreground-adjust))
+                 (face-foreground base-face nil t)))
+         (spec `(,@base-face-attrs
+                 ,@(when bg `(:background ,bg))
+                 ,@(when fg `(:foreground ,fg))
+                 ,@(when weight `(:weight ,weight))
+                 ,@(when slant `(:slant ,slant))
+                 ,@(when underline `(:underline ,underline))
+                 ,@(when overline `(:overline ,overline))
+                 ,@(when strike-through `(:strike-through ,strike-through))
+                 ,@(when box `(:box ,box))
+                 ,@(when inverse-video `(:inverse-video ,inverse-video))
+                 ,@(when stipple `(:stipple ,stipple)))))
+    spec))
+
+(defun adjust-color (color percent)
+  "Adjust COLOR by PERCENT (-100 to 100)."
+  (if (string= color "unspecified")
+      color
+    (let* ((rgb (color-name-to-rgb color))
+           (adjusted-rgb (mapcar (lambda (comp)
+                                   (if (> percent 0)
+                                       (min 1.0 (+ comp (* (- 1.0 comp) (/ percent 100.0))))
+                                       (max 0.0 (+ comp (* comp (/ percent 100.0))))))
+                                 rgb)))
+      (apply 'color-rgb-to-hex adjusted-rgb))))
 
 (provide 'punch-line-colors)
 ;;; punch-line-colors.el ends here

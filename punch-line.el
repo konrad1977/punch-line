@@ -13,20 +13,36 @@
 
 (require 'punch-line-colors)
 (require 'punch-line-vc)
+(require 'punch-line-macro)
 (require 'punch-line-music)
 (require 'punch-line-modal)
 (require 'punch-line-battery)
 (require 'punch-line-misc)
 (require 'punch-line-weather)
+(require 'punch-line-term)
+(require 'punch-line-systemmonitor)
+(require 'punch-line-package)
 
 (require 'mode-line-hud)
-
-(defvar-local punch-line-is-active nil
-  "Indicates if the current window is active.")
 
 (defgroup punch-line nil
   "Customizations for punch-line."
   :group 'mode-line)
+
+(defvar punch-left-section-cache nil)
+(defvar punch-right-section-cache nil)
+(defvar punch-left-section-cache-time 0)
+(defvar punch-right-section-cache-time 0)
+
+(defcustom punch-left-section-update-interval 0.2
+  "Minimum interval in seconds between left section updates."
+  :type 'number
+  :group 'punch-line)
+
+(defcustom punch-right-section-update-interval 5
+  "Minimum interval in seconds between right section updates."
+  :type 'number
+  :group 'punch-line)
 
 (defcustom punch-line-separator " | "
   "Separator used between sections in the mode-line."
@@ -49,52 +65,62 @@
                         :box `(:line-width 8 :color ,bg-color))))
 
 (cl-defun punch-add-separator (&key str separator leftside (last nil) (face 'punch-line-separator-face))
-  "Add a separator after STR if it is not empty or last."
-  "Add a separator after STR if it is not empty or last.
-LAST indicates if this is the last element.
-FACE specifies which face to use for the separator."
+  "Add a (SEPARATOR) around STR based on the arguments.
+Add a separator after STR if it is not empty or last.  LAST
+indicates if this is the last element.  FACE specifies which face
+to use for the separator."
   (if (and str (not (string-empty-p str)) (not last))
       (if leftside
           (progn
             (if separator
                 (concat str (propertize separator 'face face))
-              (concat str (propertize punch-line-separator 'face face))))
+            (concat str (propertize punch-line-separator 'face face))))
         (progn
           (if separator
               (concat (propertize separator 'face face) str)
-            (concat (propertize punch-line-separator 'face face) str))
-          ))
+            (concat (propertize punch-line-separator 'face face) str))))
     str))
 
 (defun punch-left-section ()
-  "Create the left section of the mode-line."
-  (let ((left-section (list (concat (punch-evil-status)
-                                    (punch-evil-mc-info)
-                                    (punch-line-spacer)
-                                    (punch-buffer-name)
-                                    (punch-add-separator :str (punch-major-mode) :separator "|")
-                                    (punch-add-separator :str (punch-eglot-info))
-                                    (punch-add-separator :str (mode-line-segment-hud))
-                                    (punch-process-info)
-                                    ))))
-    left-section))
+  "Create the left section of the mode-line with caching."
+  (let ((current-time (float-time)))
+    (when (or (null punch-left-section-cache)
+	      (> (- current-time punch-left-section-cache-time) punch-left-section-update-interval))
+      (setq punch-left-section-cache
+	    (list (concat
+		   (punch-evil-status)
+		   (punch-evil-mc-info)
+		   (punch-macro-info)
+		   (punch-line-spacer)
+		   (punch-buffer-name)
+		   (punch-add-separator :str (punch-major-mode) :separator "|")
+		   (punch-add-separator :str (punch-project-info))
+		   (punch-add-separator :str (punch-flycheck-mode-line))
+		   (punch-add-separator :str (mode-line-segment-hud))
+		   (punch-process-info))))
+      (setq punch-left-section-cache-time current-time))
+    punch-left-section-cache))
 
 (defun punch-right-section ()
-  "Create the right section of the mode-line."
-  (let ((right-section (concat
-                        (punch-add-separator :str (punch-line-music-info) :leftside t)
-                        (punch-line-col)
-                        (punch-add-separator :str (punch-flycheck-mode-line) :leftside t)
-                        (punch-buffer-position)
-                        (punch-add-separator :str (punch-copilot-info) :leftside t)
-                        (punch-misc-info)
-                        (punch-add-separator :str (punch-weather-info) :leftside t)
-                        (punch-add-separator :str (punch-git-info) :leftside t)
-                        (punch-add-separator :str (punch-battery-info) :leftside t)
-                        (punch-time-info)
-                        )))
-    (list (propertize " " 'display `((space :align-to (- right ,(string-width right-section)))))
-          right-section)))
+  "Create the right section of the mode-line with caching."
+  (let ((current-time (float-time)))
+    (when (or (null punch-right-section-cache)
+              (> (- current-time punch-right-section-cache-time) punch-right-section-update-interval))
+      (setq punch-right-section-cache
+            (concat
+             (punch-add-separator :str (punch-line-music-info) :leftside t)
+             (punch-add-separator :str (punch-package-info) :leftside t)
+             (punch-line-col)
+             (punch-buffer-position)
+             (punch-add-separator :str (punch-copilot-info) :leftside t)
+             (punch-add-separator :str (punch-term-info) :leftside t)
+             (punch-misc-info)
+             (punch-add-separator :str (punch-git-info) :leftside t)
+             (punch-add-separator :str (punch-weather-info) :leftside t)
+             (punch-add-separator :str (punch-battery-info) :leftside t)
+             (punch-time-info)))
+      (setq punch-right-section-cache-time current-time))
+    punch-right-section-cache))
 
 (defun punch-mode-line-inactive-format ()
   "Inactive format with Evil status and buffer name in gray."
@@ -104,13 +130,17 @@ FACE specifies which face to use for the separator."
          (propertize (format " %s " (buffer-name))
                      'face 'punch-line-inactive-face))))
 
-(defun punch-mode-line-format ()
-  "Generate the format for punch-line mode-line."
-  (let ((left (punch-left-section))
-        (right (punch-right-section)))
-    (if punch-line-is-active
-        (append left right)
-      (punch-mode-line-inactive-format))))
+ (defun punch-fill-to-right ()
+     "Return whitespace to push the rest of the mode-line to the right."
+     (propertize " " 'display `((space :align-to (- right ,(string-width (punch-right-section)))))))
+
+  (defun punch-mode-line-format ()
+     "Generate the mode-line format with improved caching."
+     (if punch-line-is-active
+         (list (punch-left-section)
+               '(:eval (punch-fill-to-right))
+               (punch-right-section))
+       (punch-mode-line-inactive-format)))
 
 (defun punch-update-mode-line (&optional _)
   "Update mode-line for all windows."
@@ -131,7 +161,8 @@ FACE specifies which face to use for the separator."
   (add-hook 'window-configuration-change-hook #'punch-update-mode-line)
   (add-hook 'focus-in-hook #'punch-update-mode-line)
   (add-hook 'focus-out-hook #'punch-update-mode-line)
-  (add-hook 'window-state-change-hook #'punch-update-mode-line)  ; Add this hook
+  (add-hook 'window-buffer-change-functions #'punch-update-mode-line)  ; Add this hook
+  (add-hook 'window-state-change-hook #'punch-update-mode-line)
   (add-hook 'after-load-theme-hook #'punch-update-inactive-face))
 
 (defun punch-remove-hooks ()
@@ -140,7 +171,8 @@ FACE specifies which face to use for the separator."
   (remove-hook 'window-configuration-change-hook #'punch-update-mode-line)
   (remove-hook 'focus-in-hook #'punch-update-mode-line)
   (remove-hook 'focus-out-hook #'punch-update-mode-line)
-  (remove-hook 'window-state-change-hook #'punch-update-mode-line)  ; Remove this hook
+  (remove-hook 'window-buffer-change-functions #'punch-update-mode-line)  ; Remove this hook
+  (remove-hook 'window-state-change-hook #'punch-update-mode-line)
   (remove-hook 'after-load-theme-hook #'punch-update-inactive-face))
 
 (define-minor-mode punch-line-mode

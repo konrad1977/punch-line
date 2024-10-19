@@ -13,6 +13,7 @@
 (require 'flycheck)
 (require 'nerd-icons)
 (require 'project)
+(require 'punch-line-colors)
 
 (when (featurep 'projectile)
   (require 'projectile))
@@ -44,6 +45,11 @@
 
 (defcustom punch-show-project-info t
   "If set to t, show project information."
+  :type 'boolean
+  :group 'punch-line)
+
+(defcustom punch-show-lsp-info t
+  "If set to t, show LSP information."
   :type 'boolean
   :group 'punch-line)
 
@@ -85,18 +91,33 @@
       (unless (string-blank-p misc-info)
         (string-trim misc-info)))))
 
-(defun punch-eglot-info ()
-  "Return current Eglot status for the mode line using nerd-icons."
+(defun punch-lsp-info ()
+  "Return current LSP (Eglot or lsp-mode) status for the mode line using nerd-icons."
+  (when punch-show-lsp-info
+    (cond
+     ((bound-and-true-p eglot--managed-mode)
+      (let* ((server (eglot-current-server))
+             (icon (propertize (nerd-icons-codicon "nf-cod-pulse")
+                               'face 'punch-line-lsp-icon-face)))
+        (if server
+            icon
+          "")))
+     ((bound-and-true-p lsp-mode)
+      (let ((icon (propertize (nerd-icons-codicon "nf-cod-pulse")
+                              'face 'punch-line-lsp-icon-face)))
+        (if (lsp-workspaces)
+            icon
+          "")))
+     (t ""))))
+
+(defun punch-project-info ()
+  "Show project information."
+  (when (and punch-show-project-info punch-show-lsp-info)
+    (concat (punch--project-name) " " (punch-lsp-info)))
   (when punch-show-project-info
-    (if (bound-and-true-p eglot--managed-mode)
-        (let* ((server (eglot-current-server))
-               (nick (and server (eglot--project-nickname server)))
-               (icon (propertize (nerd-icons-codicon "nf-cod-pulse")
-                                 'face 'punch-line-eglot-icon-face)))
-          (if server
-              (concat (propertize (or nick "") 'face 'punch-line-project-face) " " icon " ")
-            icon))
-      (punch--project-name))))
+    (punch--project-name))
+  (when punch-show-lsp-info)
+    (punch-lsp-info))
 
 (defun punch-project-name ()
   "Get the project name if any."
@@ -151,7 +172,7 @@
 (defun punch-time-info ()
   "Show time with custom face."
   (when punch-line-show-time-info
-    (propertize (format-time-string "%H:%M") 'face 'punch-line-time-face)))
+    (propertize (format-time-string "%H:%M ") 'face 'punch-line-time-face)))
 
 (provide 'punch-line-misc)
 ;;; punch-line-misc.el ends here
