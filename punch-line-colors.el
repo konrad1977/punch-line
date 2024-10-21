@@ -52,6 +52,24 @@
   "Face for Emacs state."
   :group 'punch-line)
 
+(defface punch-line-meow-motion-face
+  '((t :foreground "#333333" :background "#B0C4DE" :weight bold
+       :box (:line-width 8 :color "#B0C4DE")))
+  "Face for Emacs state."
+  :group 'punch-line)
+
+(defface punch-line-meow-keypad-face
+  '((t :foreground "#333333" :background "#D27E99" :weight bold
+       :box (:line-width 8 :color "#D27E99")))
+  "Face for Emacs state."
+  :group 'punch-line)
+
+(defface punch-line-meow-insert-exit-face
+  '((t :foreground "#333333" :background "#E6C384" :weight bold
+       :box (:line-width 8 :color "#E6C384")))
+  "Face for Emacs state."
+  :group 'punch-line)
+
 ;;; Git faces
 (defface punch-line-git-edited-face
   '((t :foreground "#F1FA8C"))

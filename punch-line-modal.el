@@ -9,54 +9,53 @@
 
 ;;; Code:
 
-(require 'evil)
-(require 'evil-mc)
 (require 'nerd-icons)
 
 (defcustom punch-line-show-evil-modes t
-  "Show Evil modes in the mode-line."
+  "Show Evil and Meow modes in the mode-line."
   :type 'boolean
   :group 'punch-line)
 
-;; Update Evil colors to faces
+;; Update Evil/Meow colors to faces
 (defcustom punch-evil-faces
   '((normal . punch-line-evil-normal-face)
     (insert . punch-line-evil-insert-face)
     (visual . punch-line-evil-visual-face)
-    (replace . punch-line-evil-replace-face))
-  "Faces for different Evil states."
+    (replace . punch-line-evil-replace-face)
+    (motion . punch-line-meow-motion-face)  ;; Meow motion face
+    (keypad . punch-line-meow-keypad-face)  ;; Meow keypad face
+    (insert-exit . punch-line-meow-insert-exit-face)) ;; Meow insert exit face
+  "Faces for different Evil and Meow states."
   :type '(alist :key-type symbol :value-type face)
   :group 'punch-line)
 
 (defun punch-evil-status-inactive ()
-  "Show Evil status with gray face for inactive mode-line."
+  "Show Evil/Meow status with gray face for inactive mode-line."
   (when punch-line-show-evil-modes
-    (let* ((evil-state (if (and (bound-and-true-p evil-local-mode)
-                                (boundp 'evil-state))
-                           evil-state
-                         'emacs))
-           (state-name (upcase (symbol-name evil-state))))
+    (let* ((state (cond ((and (bound-and-true-p evil-local-mode) (boundp 'evil-state)) evil-state)
+                        ((and (bound-and-true-p meow-mode) (boundp 'meow-state)) meow-state)
+     (t 'emacs)))
+           (state-name (upcase (symbol-name state))))
       (propertize (format " %s " state-name)
                   'face 'punch-line-inactive-face))))
 
-;; Evil status function
+;; Evil/Meow status function
 (defun punch-evil-status ()
-  "Show Evil status with custom face and correct vertical alignment."
+  "Show Evil/Meow status with custom face and correct vertical alignment."
   (if punch-line-show-evil-modes
-    (let* ((evil-state (if (and (bound-and-true-p evil-local-mode)
-                                (boundp 'evil-state)
-                                )
-                           evil-state
-                         ))
-           (state-face (or (cdr (assq evil-state punch-evil-faces))
-                         'punch-line-evil-emacs-face))
-           (state-name (upcase (symbol-name evil-state))))
-      (propertize (format " %s " state-name)
-                  'face state-face))
+      (let* ((state (cond ((and (bound-and-true-p evil-local-mode) (boundp 'evil-state)) evil-state)
+                          ((and (bound-and-true-p meow-mode) (boundp 'meow-state)) meow-state)
+                          (t 'emacs)))
+             (state-face (or (cdr (assq state punch-evil-faces))
+                             'punch-line-evil-emacs-face))
+             (state-name (upcase (symbol-name state))))
+        (propertize (format " %s " state-name)
+                    'face state-face))
     (propertize " " 'face 'punch-line-evil-normal-face)))
 
 (defun punch-evil-mc-info ()
   "Show Evil MC information."
+  (require 'evil-mc-vars)
   (let ((cursor-count (evil-mc-get-cursor-count))
         (icon (nerd-icons-octicon "nf-oct-pencil")))
     (if (> cursor-count 1)
