@@ -20,6 +20,11 @@
 (defvar punch-macro-count 0
   "Count of actions in the current or last recorded macro.")
 
+(defcustom punch-show-macro t
+  "Non-nil means show macro, nil means hide macro."
+  :type 'boolean
+  :group 'punch-line)
+
 (defun punch-macro-start-hook ()
   "Hook function called when macro recording starts."
   (setq punch-macro-count 0))
@@ -44,9 +49,10 @@
       (setq info "")))
     info))
 
-(add-hook 'kmacro-start-hook #'punch-macro-start-hook)
-(add-hook 'kmacro-end-hook #'punch-macro-end-hook)
-(add-hook 'kmacro-exec-hook #'punch-macro-exec-hook)
+(when (bound-and-true-p punch-show-macro)
+  (add-hook 'kmacro-start-hook #'punch-macro-start-hook)
+  (add-hook 'kmacro-end-hook #'punch-macro-end-hook)
+  (add-hook 'kmacro-exec-hook #'punch-macro-exec-hook))
 
 (provide 'punch-line-macro)
 ;;; punch-line-macro.el ends here
