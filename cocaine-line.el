@@ -418,6 +418,7 @@
                         ;; (cocaine-add-separator :str (doom-modeline-segment--salih/word-count) :leftside t)
                         (cocaine-add-separator :str (doom-modeline-segment--salih/selection-info) :leftside t)
                         (cocaine-add-separator :str (doom-modeline-segment--matches) :leftside t)
+                        (cocaine-add-separator :str (doom-modeline-segment--irc) :leftside t)
                         (cocaine-add-separator :str (and (boundp 'mu4e-alert-mode-line) (or mu4e-alert-mode-line ""))  :leftside t)
                         (cocaine-add-separator :str (doom-modeline-segment--lsp) :leftside t)
                         (cocaine-add-separator :str (doom-modeline-segment--minor-modes) :leftside t)
