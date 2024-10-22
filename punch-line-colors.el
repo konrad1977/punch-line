@@ -97,12 +97,12 @@
   :group 'punch-line)
 
 (defface punch-line-buffer-name-face
-  '((t :foreground "#a0a0ae" :weight bold))
+  '((t :inherit mode-line-buffer-id))
   "Face for buffer name."
   :group 'punch-line)
 
 (defface punch-line-major-mode-face
-  '((t :foreground "#888899"))
+  '((t :inherit mode-line-buffer-id))
   "Face for major mode."
   :group 'punch-line)
 
@@ -112,7 +112,7 @@
   :group 'punch-line)
 
 (defface punch-line-time-face
-  '((t :foreground "#888899":weight light))
+  '((t :inherit mode-line-buffer-id :weight light))
   "Face for time display."
   :group 'punch-line)
 
