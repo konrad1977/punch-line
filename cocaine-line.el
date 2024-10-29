@@ -10,7 +10,6 @@
 
 ;;; Code:
 
-(require 'all-the-icons)
 (require 'battery)
 (require 'cl-lib)
 (require 'evil)
@@ -402,7 +401,7 @@
             (if (derived-mode-p
                  'pdf-view-mode)
                 (concat " " (salih/doom-modeline-update-pdf-pages-only-percent))
-              (substring (doom-modeline-segment--buffer-position) 2)))
+              (substring (format-mode-line (doom-modeline-segment--buffer-position)) 1)))
 
            (cocaine-add-separator :str (mode-line-segment-hud))
            (cocaine-add-separator :str (cocaine-process-info))))))
