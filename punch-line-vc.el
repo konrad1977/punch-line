@@ -31,7 +31,7 @@
 
 (defun punch-vc--rev (file backend)
   "Get the revision for FILE in BACKEND."
-  (when-let ((rev (vc-working-revision file backend)))
+  (when-let* ((rev (vc-working-revision file backend)))
     (substring rev 0 (min (length rev) 7))))
 
 (defun punch-git-info ()

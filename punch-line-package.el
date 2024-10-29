@@ -24,31 +24,8 @@
 (defvar punch-package-last-check-time nil
   "Time at which the package updates were last checked.")
 
-;; (defun punch-package-check-updates ()
-;;   "Check for package updates asynchronously and cache the result."
-;;   (async-start
-;;    `(lambda ()
-;;       (require 'package)
-;;       (let ((upgradables nil))
-;;         (with-temp-buffer
-;;           (package-menu-mode)
-;;           (when (fboundp 'package--ensure-package-menu-mode)
-;;             (package--ensure-package-menu-mode))
-;;           (let ((inhibit-message t))
-;;             (message "Refreshing package contents...")
-;;             (package-refresh-contents))
-;;         (message "Generating package menu...")
-;;           (package-menu--generate nil t)
-;;           (message "Finding upgradable packages...")
-;;           (setq upgradables (package-menu--find-upgrades)))
-;;         (message "Found %d upgradable package(s)." (length upgradables))
-;;         (list upgradables (length upgradables))))
-;;    (lambda (result)
-;;      (let ((upgradables (nth 0 result))
-;;            (count (nth 1 result)))
-;;        (message "Async result received: %d upgradable package(s)." count)
-;;        (setq punch-package-updates-count count)
-;;        (setq punch-package-last-check-time (current-time))))))
+(defvar punch-package-updates-finished-hook nil
+  "Hook run after package updates check completes. Receives the count as argument.")
 
 (defun punch-package-check-updates-callback (upgradables)
   "Callback function to handle the result of the async package check."
@@ -59,23 +36,34 @@
 (defun punch-package-check-updates ()
   "Return the number of upgradable packages asynchronously."
   (async-start
-   ;; What to do in the child process
-   (lambda ()
-     (require 'package)
-     (let ((upgradables nil))
-       (with-temp-buffer
-         (let ((inhibit-message t)) ; Suppress output
-           (package-menu-mode)
-           (when (fboundp 'package--ensure-package-menu-mode)
-             (package--ensure-package-menu-mode))
-           ;; Fetch the remote list of packages.
-           (package-refresh-contents)
-           (package-menu--generate nil t)
-           (setq upgradables (package-menu--find-upgrades))))
-       upgradables))
-   ;; What to do when it finishes
-   'punch-package-check-updates-callback))
-
+   `(lambda ()
+      (require 'package)
+      (package-initialize)
+      (package-refresh-contents)
+      (let* ((installed-packages (mapcar #'car package-alist))
+             (upgradable-count 0))
+        (dolist (pkg installed-packages)
+          (let* ((desc (cadr (assq pkg package-archive-contents)))
+                 (installed-pkg (cadr (assq pkg package-alist)))
+                 (installed-version (and installed-pkg
+                                      (if (fboundp 'package-desc-version)
+                                          (package-desc-version installed-pkg)
+                                        (package-desc-vers installed-pkg))))
+                 (newest-version (and desc
+                                    (if (fboundp 'package-desc-version)
+                                        (package-desc-version desc)
+                                      (package-desc-vers desc)))))
+            (when (and installed-version newest-version
+                       (version-list-< installed-version newest-version))
+              (setq upgradable-count (1+ upgradable-count))
+              (message "Package %s can be upgraded from %s to %s"
+                       pkg
+                       (package-version-join installed-version)
+                       (package-version-join newest-version)))))
+        upgradable-count))
+   (lambda (result)
+     (message "Package update check completed. Found %d upgradable packages" result)
+     result)))
 
 (defun punch-package-upgradable-packages ()
   "Return the number of upgradable packages, using cached value if available."

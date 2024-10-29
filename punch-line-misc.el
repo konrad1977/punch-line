@@ -81,7 +81,7 @@
 (defun punch-process-info ()
   "Show information about active processes."
   (when punch-show-processes-info
-    (let ((process-info (format-mode-line mode-line-process)))
+    (let ((process-info (concat " " (format-mode-line mode-line-process))))
         process-info)))
 
 (defun punch-misc-info ()
@@ -172,7 +172,7 @@
 (defun punch-time-info ()
   "Show time with custom face."
   (when punch-line-show-time-info
-    (propertize (format-time-string "%H:%M ") 'face 'punch-line-time-face)))
+    (propertize (format-time-string "%H:%M") 'face 'punch-line-time-face)))
 
 (provide 'punch-line-misc)
 ;;; punch-line-misc.el ends here

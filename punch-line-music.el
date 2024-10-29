@@ -27,6 +27,11 @@ If a plist, it can contain the following properties:
                         :options ((:service (choice (const apple) (const spotify))))))
   :group 'punch-line)
 
+(defcustom punch-line-music-max-length 40
+  "Maximum length of the music info displayed in the mode-line."
+  :type 'number
+  :group 'punch-line)
+
 (defface punch-line-music-face
   '((t (:inherit font-lock-comment-face)))
   "Face for inactive mode-line elements."
@@ -108,10 +113,18 @@ end tell" app-name app-name)))
                (setq punch-music-info-cache
                      (if (string-empty-p (string-trim output))
                          ""
-                       (concat " " (punch-line-icon) " " (propertize (string-trim output) 'face 'punch-line-music-face))))
+                       (concat " " (punch-line-icon) " " (propertize (punch-line-trim-music-info output) 'face 'punch-line-music-face))))
                (force-mode-line-update t)))
            ;; Clean up process buffer after we're done with it
            (kill-buffer (process-buffer proc))))))))
+
+(defun punch-line-trim-music-info (info)
+  "Trim the music INFO to a maximum length."
+  (let ((max-length punch-line-music-max-length)
+	(text (string-trim info)))
+    (if (> (length text) max-length)
+	(concat (substring text 0 max-length) "...")
+      info)))
 
 (defun punch-line-icon ()
   "Return the icon for the music service."
@@ -134,7 +147,7 @@ end tell" app-name app-name)))
     (setq punch-music-info-timer nil)))
 
 (defun punch-line-get-music-info ()
-  "Get the current cached music info."
+  "Get the current cached music info with a limited length."
   punch-music-info-cache)
 
 (defun punch-line-music-info ()

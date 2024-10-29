@@ -33,8 +33,9 @@
 (defvar punch-right-section-cache nil)
 (defvar punch-left-section-cache-time 0)
 (defvar punch-right-section-cache-time 0)
+(defvar punch-line-is-active nil)
 
-(defcustom punch-left-section-update-interval 0.2
+(defcustom punch-left-section-update-interval 0.1
   "Minimum interval in seconds between left section updates."
   :type 'number
   :group 'punch-line)
@@ -109,7 +110,7 @@ to use for the separator."
       (setq punch-right-section-cache
             (concat
              (punch-add-separator :str (punch-line-music-info) :leftside t)
-             (punch-add-separator :str (punch-package-info) :leftside t)
+             ;; (punch-add-separator :str (punch-package-info) :leftside t)
              (punch-line-col)
              (punch-buffer-position)
              (punch-add-separator :str (punch-copilot-info) :leftside t)
@@ -134,13 +135,13 @@ to use for the separator."
      "Return whitespace to push the rest of the mode-line to the right."
      (propertize " " 'display `((space :align-to (- right ,(string-width (punch-right-section)))))))
 
-  (defun punch-mode-line-format ()
-     "Generate the mode-line format with improved caching."
-     (if punch-line-is-active
-         (list (punch-left-section)
-               '(:eval (punch-fill-to-right))
-               (punch-right-section))
-       (punch-mode-line-inactive-format)))
+(defun punch-mode-line-format ()
+  "Generate the mode-line format with improved caching."
+  (if punch-line-is-active
+      (list (punch-left-section)
+	    '(:eval (punch-fill-to-right))
+	    (punch-right-section))
+    (punch-mode-line-inactive-format)))
 
 (defun punch-update-mode-line (&optional _)
   "Update mode-line for all windows."
@@ -149,7 +150,7 @@ to use for the separator."
       (dolist (window (window-list frame))
         (with-current-buffer (window-buffer window)
           (setq-local punch-line-is-active (eq window active-window))
-          (force-mode-line-update window))))))
+          (force-mode-line-update))))))
 
 (defun punch-set-mode-line ()
   "Set the mode-line format for punch-line."
