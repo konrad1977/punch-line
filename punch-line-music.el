@@ -113,7 +113,9 @@ end tell" app-name app-name)))
                (setq punch-music-info-cache
                      (if (string-empty-p (string-trim output))
                          ""
-                       (concat " " (punch-line-icon) " " (propertize (punch-line-trim-music-info output) 'face 'punch-line-music-face))))
+		       (if (> punch-line-music-max-length 0)
+			   (concat " " (punch-line-icon) " " (propertize (punch-line-trim-music-info output) 'face 'punch-line-music-face))
+			 (concat (punch-line-icon) " "))))
                (force-mode-line-update t)))
            ;; Clean up process buffer after we're done with it
            (kill-buffer (process-buffer proc))))))))
