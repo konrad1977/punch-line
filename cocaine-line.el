@@ -339,7 +339,7 @@
 (defun cocaine-major-mode ()
   "Show major mode with custom face."
   (propertize (substring-no-properties (format-mode-line mode-name))
-              'face 'cocaine-line-major-mode-face))
+              'face 'doom-modeline-buffer-file))
 
 (defun cocaine-line-col ()
   "Show line and column with custom face."
@@ -412,8 +412,9 @@
   "Create the right section of the modeline."
   (let ((right-section (concat
                         (if (derived-mode-p 'pdf-view-mode)
-                           (propertize
-                            (salih/doom-modeline-update-pdf-pages-no-percent)) "")
+                            (cocaine-add-separator
+                             :str (propertize (salih/doom-modeline-update-pdf-pages-no-percent)) :leftside t)
+                            "")
                         ;; (cocaine-add-separator :str (doom-modeline-segment--salih/word-count) :leftside t)
                         (cocaine-add-separator :str (doom-modeline-segment--salih/selection-info) :leftside t)
                         (cocaine-add-separator :str (doom-modeline-segment--matches) :leftside t)
