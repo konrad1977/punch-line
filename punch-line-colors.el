@@ -132,7 +132,7 @@
   :group 'punch-line)
 
 (defface punch-line-separator-face
-  '((t :foreground "#54536D" :height 0.8))
+  '((t :foreground "#54536D" :weight thin))
   "Face for the separator between sections in punch-line."
   :group 'punch-line)
 

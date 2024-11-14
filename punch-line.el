@@ -45,7 +45,12 @@
   :type 'number
   :group 'punch-line)
 
-(defcustom punch-line-separator " | "
+(defcustom punch-line-separator "  "
+  "Separator used between sections in the mode-line."
+  :type 'string
+  :group 'punch-line)
+
+(defcustom punch-line-right-separator "  "
   "Separator used between sections in the mode-line."
   :type 'string
   :group 'punch-line)
@@ -98,7 +103,8 @@ to use for the separator."
 		   (punch-add-separator :str (punch-project-info))
 		   (punch-add-separator :str (punch-flycheck-mode-line))
 		   (punch-add-separator :str (mode-line-segment-hud))
-		   (punch-process-info))))
+		   (punch-process-info)
+		   )))
       (setq punch-left-section-cache-time current-time))
     punch-left-section-cache))
 
@@ -109,17 +115,17 @@ to use for the separator."
               (> (- current-time punch-right-section-cache-time) punch-right-section-update-interval))
       (setq punch-right-section-cache
             (concat
-             (punch-add-separator :str (punch-line-music-info) :leftside t)
-             ;; (punch-add-separator :str (punch-package-info) :leftside t)
-             (punch-line-col)
-             (punch-buffer-position)
-             (punch-add-separator :str (punch-copilot-info) :leftside t)
-             (punch-add-separator :str (punch-term-info) :leftside t)
-             (punch-misc-info)
-             (punch-add-separator :str (punch-git-info) :leftside t)
-             (punch-add-separator :str (punch-weather-info) :leftside t)
-             (punch-add-separator :str (punch-battery-info) :leftside t)
-             (punch-time-info)))
+             (punch-add-separator :str (punch-line-music-info) :separator punch-line-right-separator :leftside t)
+	     (punch-add-separator :str (punch-line-col) :separator punch-line-right-separator :leftside t)
+	     (punch-add-separator :str (punch-buffer-position) :separator punch-line-right-separator :leftside t)
+             (punch-add-separator :str (punch-copilot-info) :separator punch-line-right-separator :leftside t)
+             (punch-add-separator :str (punch-term-info) :separator punch-line-right-separator :leftside t)
+	     (punch-add-separator :str (punch-misc-info) :separator punch-line-right-separator :leftside t)
+             (punch-add-separator :str (punch-git-info) :separator punch-line-right-separator :leftside t)
+             (punch-add-separator :str (punch-weather-info) :separator punch-line-right-separator :leftside t)
+             (punch-add-separator :str (punch-battery-info) :separator punch-line-right-separator :leftside t)
+             (punch-time-info)
+	     ))
       (setq punch-right-section-cache-time current-time))
     punch-right-section-cache))
 
@@ -131,16 +137,17 @@ to use for the separator."
          (propertize (format " %s " (buffer-name))
                      'face 'punch-line-inactive-face))))
 
- (defun punch-fill-to-right ()
-     "Return whitespace to push the rest of the mode-line to the right."
-     (propertize " " 'display `((space :align-to (- right ,(string-width (punch-right-section)))))))
+(defun punch-fill-to-right ()
+  "Return whitespace to push the rest of the mode-line to the right."
+  (let ((right-section (or (punch-right-section) ""))) ; Säkerställ att vi har en sträng
+    (propertize " " 'display `((space :align-to (- right ,(string-width right-section)))))))
 
 (defun punch-mode-line-format ()
   "Generate the mode-line format with improved caching."
   (if punch-line-is-active
       (list (punch-left-section)
-	    '(:eval (punch-fill-to-right))
-	    (punch-right-section))
+            (punch-fill-to-right)  ; Ta bort ':eval och quote
+            (punch-right-section))
     (punch-mode-line-inactive-format)))
 
 (defun punch-update-mode-line (&optional _)

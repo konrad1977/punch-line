@@ -112,12 +112,16 @@
 
 (defun punch-project-info ()
   "Show project information."
-  (when (and punch-show-project-info punch-show-lsp-info)
-    (concat (punch--project-name) " " (punch-lsp-info)))
-  (when punch-show-project-info
+  (cond
+   ((and punch-show-project-info punch-show-lsp-info)
+    (let ((project (punch--project-name))
+          (lsp (or (punch-lsp-info) "")))
+      (string-trim (concat project " " lsp))))
+   (punch-show-project-info
     (punch--project-name))
-  (when punch-show-lsp-info)
-    (punch-lsp-info))
+   (punch-show-lsp-info
+    (or (punch-lsp-info) ""))
+   (t "")))
 
 (defun punch-project-name ()
   "Get the project name if any."
@@ -126,12 +130,15 @@
         (project-current)
         (project-name (project-current)))
    (and (fboundp 'projectile-project-name)
-        (projectile-project-name))))
+        (projectile-project-name))
+   ""))
 
 (defun punch--project-name ()
   "Show project information."
   (let ((project (punch-project-name)))
-    (propertize project 'face 'punch-line-project-face)))
+    (if (string-empty-p project)
+        ""
+      (propertize project 'face 'punch-line-project-face))))
 
 ;; Custom functions for left section
 (defun punch-buffer-name ()

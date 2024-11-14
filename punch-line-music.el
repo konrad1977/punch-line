@@ -123,10 +123,10 @@ end tell" app-name app-name)))
 (defun punch-line-trim-music-info (info)
   "Trim the music INFO to a maximum length."
   (let ((max-length punch-line-music-max-length)
-	(text (string-trim info)))
+        (text (replace-regexp-in-string "\n" "" (string-trim info))))
     (if (> (length text) max-length)
-	(concat (substring text 0 max-length) "...")
-      info)))
+        (concat (substring text 0 max-length) "...")
+      text)))
 
 (defun punch-line-icon ()
   "Return the icon for the music service."
