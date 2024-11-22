@@ -385,12 +385,34 @@
                   (if charging " (Charging)" ""))
         "No battery info"))))
 
+(defsubst salih/doom-modeline--bar ()
+  "The default bar regulates the height of the mode-line in GUI."
+  (unless (and doom-modeline--bar-active doom-modeline--bar-inactive)
+    (let ((width doom-modeline-bar-width)
+          (height (max doom-modeline-height (doom-modeline--font-height))))
+      (setq doom-modeline--bar-active
+            (doom-modeline--create-bar-image 'doom-modeline-bar width height)
+            doom-modeline--bar-inactive
+            (doom-modeline--create-bar-image
+             'doom-modeline-bar-inactive width height))))
+  (if (doom-modeline--active)
+      doom-modeline--bar-inactive
+    doom-modeline--bar-inactive))
+
 (defun cocaine-left-section ()
   "Create the left section of the modeline."
   (let ((left-section
          (list
           (concat
-           (cocaine-evil-status)
+           (salih/doom-modeline--bar) ;; just to adjust height.
+           ;; (propertize " "
+           ;;                   'display '(raise 0.3)
+           ;;                   'face 'mode-line)
+
+           (cocaine-add-separator :str
+                                  (doom-modeline-segment--modals)
+                                  :leftside t
+                                  :separator "| ")
            (cocaine-line-spacer)
            (cocaine-buffer-name)
            (cocaine-add-separator :str
