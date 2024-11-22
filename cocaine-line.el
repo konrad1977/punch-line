@@ -394,10 +394,8 @@
             (doom-modeline--create-bar-image 'doom-modeline-bar width height)
             doom-modeline--bar-inactive
             (doom-modeline--create-bar-image
-             'doom-modeline-bar-inactive width height))))
-  (if (doom-modeline--active)
-      doom-modeline--bar-inactive
-    doom-modeline--bar-inactive))
+             'mode-line width height))))
+  doom-modeline--bar-inactive)
 
 (defun cocaine-left-section ()
   "Create the left section of the modeline."
