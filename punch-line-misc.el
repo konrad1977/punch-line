@@ -100,6 +100,11 @@
   (interactive "sWhat are you working on? ")
   (customize-set-variable 'punch-line-what-am-i-doing task))
 
+(defun punch-line-clear-what-am-i-doing ()
+  "Clear the current task or activity."
+  (interactive)
+  (customize-set-variable 'punch-line-what-am-i-doing nil))
+
 (defun punch-flycheck-mode-line ()
   "Custom flycheck mode-line with icons and counts."
   (when (and (bound-and-true-p flycheck-mode)
@@ -226,7 +231,9 @@
 
 (defun punch-what-am-i-doing-info ()
   "Show what-am-i-doing information with custom face."
-  (when (and punch-show-what-am-i-doing-info punch-line-what-am-i-doing)
+  (when (and punch-show-what-am-i-doing-info
+             punch-line-what-am-i-doing
+             (not (string-empty-p punch-line-what-am-i-doing)))
     (concat "Doing: "
         (propertize punch-line-what-am-i-doing
                     'face 'punch-line-what-am-i-doing-face))))
