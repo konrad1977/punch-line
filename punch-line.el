@@ -45,7 +45,7 @@
   :type 'number
   :group 'punch-line)
 
-(defcustom punch-line-separator "  "
+(defcustom punch-line-left-separator "  "
   "Separator used between sections in the mode-line."
   :type 'string
   :group 'punch-line)
@@ -80,11 +80,11 @@ to use for the separator."
           (progn
             (if separator
                 (concat str (propertize separator 'face face))
-            (concat str (propertize punch-line-separator 'face face))))
+            (concat str (propertize punch-line-left-separator 'face face))))
         (progn
           (if separator
               (concat (propertize separator 'face face) str)
-            (concat (propertize punch-line-separator 'face face) str))))
+            (concat (propertize punch-line-left-separator 'face face) str))))
     str))
 
 (defun punch-left-section ()
@@ -103,6 +103,7 @@ to use for the separator."
 		   (punch-add-separator :str (punch-project-info))
 		   (punch-add-separator :str (punch-flycheck-mode-line))
 		   (punch-add-separator :str (mode-line-segment-hud))
+		   (punch-add-separator :str (punch-what-am-i-doing-info))
 		   (punch-process-info)
 		   )))
       (setq punch-left-section-cache-time current-time))

@@ -102,7 +102,7 @@
   :group 'punch-line)
 
 (defface punch-line-major-mode-face
-  '((t :inherit mode-line-buffer-id))
+  '((t :inherit font-lock-doc-face :weight bold))
   "Face for major mode."
   :group 'punch-line)
 
@@ -133,6 +133,11 @@
 
 (defface punch-line-separator-face
   '((t :foreground "#54536D" :weight thin))
+  "Face for the separator between sections in punch-line."
+  :group 'punch-line)
+
+(defface punch-line-what-am-i-doing-face
+  '((t :inherit font-lock-property-use-face))
   "Face for the separator between sections in punch-line."
   :group 'punch-line)
 

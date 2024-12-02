@@ -8,12 +8,14 @@
 ```emacs-lisp
 (use-package punch-line
   :ensure nil
-  :after evil
-  :custom
-  (punch-weather-update) ;; Use weather service
+  :after ((after-init . punch-line-mode)
+          (after-init . punch-weather-update)   // Load weather
+          (after-init . punch-load-task))       // Load saved current 
   :config
   (setq
-   punch-line-separator "  "
+   punch-line-left-separator "  "
+   punch-line-right-separator "  "
+   punch-show-flycheck-info t                   ;; Show flycheck info
    punch-show-project-info t					;; Show project info
    punch-show-git-info t						;; Show git info
    punch-show-lsp-info t						;; Show eglot info
@@ -22,7 +24,8 @@
    punch-show-weather-info t					;; Weather info
    punch-weather-latitude "56.7365"				;; Weather latitude
    punch-weather-longitude "16.2981"			;; Weather longitude
+   punch-line-music-max-length 80               ;; Max length of artist and song
    punch-line-music-info '(:service apple))		;; Music service
-  (punch-line-mode 1))
+  )
 
 ```

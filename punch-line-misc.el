@@ -18,6 +18,10 @@
 (when (featurep 'projectile)
   (require 'projectile))
 
+(defgroup punch-line nil
+  "Customization group for punch-line."
+  :group 'convenience)
+
 (defcustom punch-show-processes-info t
   "If set to t, show active processes."
   :type 'boolean
@@ -58,9 +62,48 @@
   :type 'boolean
   :group 'punch-line)
 
+(defcustom punch-show-flycheck-info t
+  "If set to t, show flycheck information."
+  :type 'boolean
+  :group 'punch-line)
+
+(defcustom punch-show-what-am-i-doing-info t
+  "If set to t, show what-am-i-doing information."
+  :type 'boolean
+  :group 'punch-line)
+
+(defcustom punch-line-task-file (expand-file-name "~/.emacs.d/current-task.el")
+  "File to store the current task."
+  :type 'file
+  :group 'punch-line)
+
+(defcustom punch-line-task-file (expand-file-name "~/.emacs.d/current-task.el")
+  "File to store the current task."
+  :type 'file
+  :group 'punch-line)
+
+(defcustom punch-line-what-am-i-doing nil
+  "Stores the current task or activity."
+  :type 'string
+  :group 'punch-line)
+
+(defun punch-load-task ()
+  "Load the saved task explicitly."
+  (interactive)
+  (when (file-exists-p punch-line-task-file)
+    (with-temp-buffer
+      (insert-file-contents punch-line-task-file)
+      (setq punch-line-what-am-i-doing (read (current-buffer))))))
+
+(defun punch-line-what-am-i-doing (task)
+  "Set the current task or activity and save it."
+  (interactive "sWhat are you working on? ")
+  (customize-set-variable 'punch-line-what-am-i-doing task))
+
 (defun punch-flycheck-mode-line ()
   "Custom flycheck mode-line with icons and counts."
   (when (and (bound-and-true-p flycheck-mode)
+             punch-show-flycheck-info
              (or flycheck-current-errors
                  (eq 'running flycheck-last-status-change)))
     (let* ((count (flycheck-count-errors flycheck-current-errors))
@@ -170,7 +213,7 @@
 (defun punch-copilot-info ()
   "HUD for Copilot."
   (when (and punch-show-copilot-info (bound-and-true-p copilot-mode))
-    (propertize " " 'face '(:inherit success))))
+    (propertize " " 'face '(:inherit success))))
 
 (defun punch-line-spacer ()
   "Show an empty string."
@@ -179,7 +222,14 @@
 (defun punch-time-info ()
   "Show time with custom face."
   (when punch-line-show-time-info
-    (propertize (format-time-string "%H:%M") 'face 'punch-line-time-face)))
+    (propertize (format-time-string "%H:%M ") 'face 'punch-line-time-face)))
+
+(defun punch-what-am-i-doing-info ()
+  "Show what-am-i-doing information with custom face."
+  (when (and punch-show-what-am-i-doing-info punch-line-what-am-i-doing)
+    (concat "Doing: "
+        (propertize punch-line-what-am-i-doing
+                    'face 'punch-line-what-am-i-doing-face))))
 
 (provide 'punch-line-misc)
 ;;; punch-line-misc.el ends here
