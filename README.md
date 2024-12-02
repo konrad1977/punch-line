@@ -29,3 +29,9 @@
   )
 
 ```
+
+```shell
+M-x punch-line-what-am-i-doing
+```
+
+
