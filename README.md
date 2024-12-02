@@ -34,4 +34,9 @@
 M-x punch-line-what-am-i-doing
 ```
 
+<p align="center">
+  <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/get-shit-done.png" 
+  alt="Screenshot of a what I am currently working on."/>
+</p>
+
 
