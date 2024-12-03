@@ -77,11 +77,6 @@
   :type 'file
   :group 'punch-line)
 
-(defcustom punch-line-task-file (expand-file-name "~/.emacs.d/current-task.el")
-  "File to store the current task."
-  :type 'file
-  :group 'punch-line)
-
 (defcustom punch-line-what-am-i-doing nil
   "Stores the current task or activity."
   :type 'string
@@ -95,15 +90,22 @@
       (insert-file-contents punch-line-task-file)
       (setq punch-line-what-am-i-doing (read (current-buffer))))))
 
+(defun punch-save-task ()
+  "Save the current task to file."
+  (with-temp-file punch-line-task-file
+    (prin1 punch-line-what-am-i-doing (current-buffer))))
+
 (defun punch-line-what-am-i-doing (task)
   "Set the current task or activity and save it."
   (interactive "sWhat are you working on? ")
-  (customize-set-variable 'punch-line-what-am-i-doing task))
+  (customize-set-variable 'punch-line-what-am-i-doing task)
+  (punch-save-task))
 
 (defun punch-line-clear-what-am-i-doing ()
-  "Clear the current task or activity."
+  "Clear the current task or activity and save the change."
   (interactive)
-  (customize-set-variable 'punch-line-what-am-i-doing nil))
+  (customize-set-variable 'punch-line-what-am-i-doing nil)
+  (punch-save-task))
 
 (defun punch-flycheck-mode-line ()
   "Custom flycheck mode-line with icons and counts."
