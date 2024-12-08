@@ -30,8 +30,13 @@
 
 ```
 
+## What am I doing plugin
 ```shell
-M-x punch-line-what-am-i-doing
+M-x punch-line-what-am-i-doing-next             ### my next tasks
+M-x punch-line-what-am-i-doing-done             ### mark task as done
+M-x punch-line-what-am-i-doing-show-all         ### show all tasks
+M-x punch-line-what-am-i-doing-next-task        ### show all tasks
+M-x punch-line-what-am-i-doing-previous-task    ### show all tasks
 ```
 
 <p align="center">
