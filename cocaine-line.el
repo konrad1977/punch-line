@@ -196,23 +196,11 @@
   "Face for the separator between sections in cocaine-line."
   :group 'cocaine-line)
 
-(cl-defun cocaine-add-separator (&key str separator leftside (last nil)
+(defsubst cocaine-add-separator (&key str separator leftside (last nil)
                                       (face 'cocaine-line-separator-face))
-  "Add a separator after STR if it is not empty or last.
-    LAST indicates if this is the last element.
-    FACE specifies which face to use for the separator."
-  (if (and str (not (string-empty-p str)) (not last))
-      (if leftside
-          (progn
-            (if separator
-                (concat str (propertize separator 'face face))
-              (concat str (propertize cocaine-line-separator 'face face))))
-        (progn
-          (if separator
-              (concat (propertize separator 'face face) str)
-            (concat (propertize cocaine-line-separator 'face face) str))))
-
-    str))
+  (when (and str (not (string-empty-p str)) (not last))
+    (funcall (if leftside #'concat #'(lambda (a b) (concat b a)))
+             str (propertize (or separator cocaine-line-separator) 'face face))))
 
 ;; Evil status function
 (defun cocaine-evil-status ()
@@ -431,6 +419,7 @@
 
 
     left-section))
+
 (defun cocaine-right-section ()
   "Create the right section of the modeline."
   (let ((right-section (concat
