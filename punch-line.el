@@ -22,6 +22,7 @@
 (require 'punch-line-term)
 (require 'punch-line-systemmonitor)
 (require 'punch-line-package)
+(require 'punch-line-what-am-i-doing)
 
 (require 'mode-line-hud)
 
