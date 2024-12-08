@@ -8,9 +8,9 @@
 ```emacs-lisp
 (use-package punch-line
   :ensure nil
-  :after ((after-init . punch-line-mode)
-          (after-init . punch-weather-update)   // Load weather
-          (after-init . punch-load-task))       // Load saved current 
+  :after ((after-init . punch-line-mode)        ;; Load punch-line
+          (after-init . punch-weather-update)   ;; Load weather
+          (after-init . punch-load-tasks))      ;; Load saved current 
   :config
   (setq
    punch-line-left-separator "  "
