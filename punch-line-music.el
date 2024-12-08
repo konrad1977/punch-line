@@ -59,6 +59,20 @@ If a plist, it can contain the following properties:
 (defvar punch-music-info-timer nil
   "Timer for updating music information.")
 
+(defvar punch-line-process-timeout 5
+  "Timeout in seconds for music info process.")
+
+(defun punch-line-cleanup-stale-process ()
+  "Clean up any stale music info process and its buffer."
+  (let* ((buffer-name "*punch-line-music-info*")
+         (buffer (get-buffer buffer-name))
+         (process (and buffer (get-buffer-process buffer))))
+    (when process
+      (when (eq (process-status process) 'run)
+        (delete-process process))
+      (when buffer
+        (kill-buffer buffer)))))
+
 (defun punch-line-music-info-command (service)
   "Return the AppleScript command to get music info for SERVICE ('apple or 'spotify)."
   (let ((app-name (if (eq service 'apple) "Music" "Spotify")))
@@ -90,7 +104,7 @@ end tell" app-name app-name)))
    (t 'apple)))
 
 (defun punch-line-update-music-info-async ()
-  "Update the cached music info asynchronously."
+  "Update the cached music info asynchronously with timeout handling."
   (let ((current-time (float-time))
         (service (punch-line-get-music-service)))
     (when (and service
@@ -98,27 +112,37 @@ end tell" app-name app-name)))
                    (> (- current-time punch-music-info-last-update)
                       punch-music-info-update-interval)))
       (setq punch-music-info-last-update current-time)
+      ;; Cleanup any existing process first
+      (punch-line-cleanup-stale-process)
       (let* ((buffer-name "*punch-line-music-info*")
              (process
               (start-process "punch-line-music-info"
-                             buffer-name
-                             "osascript"
-                             "-e" (punch-line-music-info-command service))))
+                           buffer-name
+                           "osascript"
+                           "-e" (punch-line-music-info-command service))))
+        ;; Set process timeout
+        (run-with-timer punch-line-process-timeout nil
+                       (lambda ()
+                         (when (and process (eq (process-status process) 'run))
+                           (punch-line-cleanup-stale-process))))
         (set-process-sentinel
          process
          (lambda (proc event)
            (when (string= event "finished\n")
              (let ((output (with-current-buffer (process-buffer proc)
-                             (buffer-string))))
+                            (buffer-string))))
                (setq punch-music-info-cache
                      (if (string-empty-p (string-trim output))
                          ""
-		       (if (> punch-line-music-max-length 0)
-			   (concat " " (punch-line-icon) " " (propertize (punch-line-trim-music-info output) 'face 'punch-line-music-face))
-			 (concat (punch-line-icon) " "))))
+                       (if (> punch-line-music-max-length 0)
+                           (concat " " (punch-line-icon) " "
+                                   (propertize (punch-line-trim-music-info output)
+                                             'face 'punch-line-music-face))
+                         (concat (punch-line-icon) " "))))
                (force-mode-line-update t)))
-           ;; Clean up process buffer after we're done with it
-           (kill-buffer (process-buffer proc))))))))
+           ;; Clean up process buffer
+           (when (buffer-live-p (process-buffer proc))
+             (kill-buffer (process-buffer proc)))))))))
 
 (defun punch-line-trim-music-info (info)
   "Trim the music INFO to a maximum length."
@@ -143,10 +167,11 @@ end tell" app-name app-name)))
           (run-at-time 0 punch-music-info-update-interval #'punch-line-update-music-info-async))))
 
 (defun punch-line-stop-music-info-timer ()
-  "Stop the timer for updating music information."
+  "Stop the timer and clean up any running process."
   (when punch-music-info-timer
     (cancel-timer punch-music-info-timer)
-    (setq punch-music-info-timer nil)))
+    (setq punch-music-info-timer nil))
+  (punch-line-cleanup-stale-process))
 
 (defun punch-line-get-music-info ()
   "Get the current cached music info with a limited length."
