@@ -41,7 +41,7 @@
   :type 'number
   :group 'punch-line)
 
-(defcustom punch-right-section-update-interval 5
+(defcustom punch-right-section-update-interval 3
   "Minimum interval in seconds between right section updates."
   :type 'number
   :group 'punch-line)
@@ -95,18 +95,17 @@ to use for the separator."
 	      (> (- current-time punch-left-section-cache-time) punch-left-section-update-interval))
       (setq punch-left-section-cache
 	    (list (concat
-		   (punch-evil-status)
-		   (punch-evil-mc-info)
 		   (punch-macro-info)
-		   (punch-line-spacer)
+		   (punch-evil-mc-info)
+		   (punch-evil-status)
 		   (punch-buffer-name)
 		   (punch-add-separator :str (punch-major-mode) :separator "|")
 		   (punch-add-separator :str (punch-project-info))
+                   ;; (punch-add-separator :str (punch-org-info))
+		   (punch-add-separator :str (punch-what-am-i-doing-info))
 		   (punch-add-separator :str (punch-flycheck-mode-line))
 		   (punch-add-separator :str (mode-line-segment-hud))
-		   (punch-add-separator :str (punch-what-am-i-doing-info))
-		   (punch-process-info)
-		   )))
+		   (punch-process-info))))
       (setq punch-left-section-cache-time current-time))
     punch-left-section-cache))
 

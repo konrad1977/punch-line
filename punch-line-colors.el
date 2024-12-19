@@ -6,73 +6,77 @@
 
 ;;; Commentary:
 
-
 ;;; Code:
+
+(defcustom punch-height 8
+  "Width of the box around mode line segments."
+  :type 'integer
+  :group 'punch-line)
 
 ;;; Evil faces
 (defface punch-line-evil-normal-face
-  '((t :foreground "#FFFFFF" :background "#2D4F67" :weight bold
-       :box (:line-width 8 :color "#2D4F67")))
+  `((t :foreground "#FFFFFF" :background "#2D4F67" :weight bold
+       :box (:line-width ,punch-height :color "#2D4F67")))
   "Face for Evil normal state."
   :group 'punch-line)
 
 (defface punch-line-evil-insert-face
-  '((t :foreground "#333333" :background "#E6C384" :weight bold
-       :box (:line-width 8 :color "#E6C384")))
+  `((t :foreground "#333333" :background "#E6C384" :weight bold
+       :box (:line-width ,punch-height :color "#E6C384")))
   "Face for Evil insert state."
   :group 'punch-line)
 
 (defface punch-line-evil-visual-face
-  '((t :foreground "#333333" :background "#D27E99" :weight bold
-       :box (:line-width 8 :color "#D27E99")))
+  `((t :foreground "#333333" :background "#D27E99" :weight bold
+       :box (:line-width ,punch-height :color "#D27E99")))
   "Face for Evil visual state."
   :group 'punch-line)
 
 (defface punch-line-evil-replace-face
-  '((t :foreground "#333333" :background "#FF5D62" :weight bold
-       :box (:line-width 8 :color "#FF5D62")))
+  `((t :foreground "#333333" :background "#FF5D62" :weight bold
+       :box (:line-width ,punch-height :color "#FF5D62")))
   "Face for Evil replace state."
   :group 'punch-line)
 
 (defface punch-line-evil-emacs-face
-  '((t :foreground "#333333" :background "#B0C4DE" :weight bold
-       :box (:line-width 8 :color "#B0C4DE")))
+  `((t :foreground "#333333" :background "#B0C4DE" :weight bold
+       :box (:line-width ,punch-height :color "#B0C4DE")))
   "Face for Emacs state."
   :group 'punch-line)
 
 (defface punch-line-macro-face
-  '((t :foreground "#333333" :background "#B0C4DE" :weight bold
-       :box (:line-width 8 :color "#B0C4DE")))
+  `((t :foreground "#333333" :background "#B0C4DE" :weight bold
+       :box (:line-width ,punch-height :color "#B0C4DE")))
   "Face for Emacs state."
   :group 'punch-line)
 
 (defface punch-line-macro-recording-face
-  '((t :foreground "#222233" :background "#FF5D62" :weight bold
-       :box (:line-width 8 :color "#FF5D62")))
+  `((t :foreground "#222233" :background "#FF5D62" :weight bold
+       :box (:line-width ,punch-height :color "#FF5D62")))
   "Face for Emacs state."
   :group 'punch-line)
 
 (defface punch-line-meow-motion-face
-  '((t :foreground "#333333" :background "#B0C4DE" :weight bold
-       :box (:line-width 8 :color "#B0C4DE")))
+  `((t :foreground "#333333" :background "#B0C4DE" :weight bold
+       :box (:line-width ,punch-height :color "#B0C4DE")))
   "Face for Emacs state."
   :group 'punch-line)
 
 (defface punch-line-meow-keypad-face
-  '((t :foreground "#333333" :background "#D27E99" :weight bold
-       :box (:line-width 8 :color "#D27E99")))
+  `((t :foreground "#333333" :background "#D27E99" :weight bold
+       :box (:line-width ,punch-height :color "#D27E99")))
   "Face for Emacs state."
   :group 'punch-line)
 
 (defface punch-line-meow-insert-exit-face
-  '((t :foreground "#333333" :background "#E6C384" :weight bold
-       :box (:line-width 8 :color "#E6C384")))
+  `((t :foreground "#333333" :background "#E6C384" :weight bold
+       :box (:line-width ,punch-height :color "#E6C384")))
   "Face for Emacs state."
   :group 'punch-line)
 
 ;;; Git faces
 (defface punch-line-git-edited-face
-  '((t :foreground "#F1FA8C"))
+  '((t :foreground "#658594"))
   "Face for edited Git files."
   :group 'punch-line)
 
@@ -82,7 +86,7 @@
   :group 'punch-line)
 
 (defface punch-line-git-removed-face
-  '((t :foreground "#FF5555"))
+  '((t :foreground "#FF5D62"))
   "Face for removed Git files."
   :group 'punch-line)
 
@@ -97,7 +101,7 @@
   :group 'punch-line)
 
 (defface punch-line-buffer-name-face
-  '((t :inherit mode-line-buffer-id))
+  '((t :inherit mode-line-buffer-id ))
   "Face for buffer name."
   :group 'punch-line)
 
@@ -112,7 +116,7 @@
   :group 'punch-line)
 
 (defface punch-line-time-face
-  '((t :inherit mode-line-buffer-id :weight light))
+  '((t :inherit mode-line-buffer-id))
   "Face for time display."
   :group 'punch-line)
 
@@ -137,8 +141,13 @@
   :group 'punch-line)
 
 (defface punch-line-what-am-i-doing-face
-  '((t :inherit font-lock-property-use-face))
+  '((t :inherit mode-line-buffer-id))
   "Face for the separator between sections in punch-line."
+  :group 'punch-line)
+
+(defface punch-line-what-am-i-doing-count-face
+  '((t :inherit success))
+  "Face for displaying current task in mode line."
   :group 'punch-line)
 
 (require 'cl-lib)

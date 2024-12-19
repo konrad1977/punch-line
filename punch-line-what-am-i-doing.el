@@ -11,20 +11,12 @@
 ;;; Code:
 
 (require 'cl-lib)  ; Add required dependency
+(require 'nerd-icons)  ; Add required dependency
+(require 'punch-line-colors)  ; Add required dependency
 
 (defcustom punch-show-what-am-i-doing-info t
   "If set to t, show what-am-i-doing information."
   :type 'boolean
-  :group 'punch-line)
-
-(defface punch-line-what-am-i-doing-face
-  '((t :inherit mode-line-emphasis))
-  "Face for displaying current task in mode line."
-  :group 'punch-line)
-
-(defface punch-line-what-am-i-doing-count-face
-  '((t :inherit success))
-  "Face for displaying current task in mode line."
   :group 'punch-line)
 
 (defcustom punch-line-task-file (expand-file-name "~/.emacs.d/task-list.el")
@@ -67,8 +59,11 @@
 (defun punch-line-what-am-i-doing-next (task)
   "Add a new task to the end of the list."
   (interactive "sWhat's your next task? ")
-  (setq punch-line-task-list (append punch-line-task-list (list task)))
-  (punch-save-tasks))
+  (if (string-empty-p (string-trim task))
+      (message "Task cannot be empty.")
+    (progn
+      (setq punch-line-task-list (append punch-line-task-list (list task)))
+      (punch-save-tasks))))
 
 (defun punch-line-what-am-i-doing-done ()
   "Mark the current task as done and remove it from the list."
@@ -125,8 +120,9 @@
                                                task-count)
                                        'face 'punch-line-what-am-i-doing-count-face)
                          "")))
-      (concat "Doing: "
-              (propertize (format "%s" current-task) 'face 'punch-line-what-am-i-doing-face)
+      (concat (propertize (nerd-icons-faicon "nf-fa-list_check") 'face 'warning)
+              "  "
+              (propertize current-task 'face 'punch-line-what-am-i-doing-face)
               count-info))))
 
 (provide 'punch-line-what-am-i-doing)

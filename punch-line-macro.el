@@ -42,9 +42,9 @@
   (let ((info ""))
     (cond
      (defining-kbd-macro
-      (setq info (propertize (format " %s %d" punch-macro-recording-symbol punch-macro-count) 'face 'punch-line-macro-recording-face)))
+      (setq info (propertize (format " %s %d " punch-macro-recording-symbol punch-macro-count) 'face 'punch-line-macro-recording-face)))
      ((and last-kbd-macro (> punch-macro-count 0))
-      (setq info (format " %s %d" punch-macro-recorded-symbol punch-macro-count)))
+      (setq info (format " %s %d " punch-macro-recorded-symbol punch-macro-count)))
      (t
       (setq info "")))
     info))

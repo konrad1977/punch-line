@@ -1,4 +1,4 @@
-;;; punch-line-misc.el --- A customized mode-line for Emacs with Evil status and advanced customizations -*- lexical-binding: t; -*-
+;;; punch-line-misc.el --- A customized mode-line for Emacs with Evil status and advanced customization's -*- lexical-binding: t; -*-
 
 ;; Author: Mikael Konradsson
 ;; Version: 1.0
@@ -24,6 +24,11 @@
 
 (defcustom punch-show-processes-info t
   "If set to t, show active processes."
+  :type 'boolean
+  :group 'punch-line)
+
+(defcustom punch-show-org-info t
+  "If set to t, show org information."
   :type 'boolean
   :group 'punch-line)
 
@@ -67,7 +72,6 @@
   :type 'boolean
   :group 'punch-line)
 
-
 (defun punch-flycheck-mode-line ()
   "Custom flycheck mode-line with icons and counts."
   (when (and (bound-and-true-p flycheck-mode)
@@ -80,13 +84,13 @@
            (error (or (cdr (assq 'error count)) 0)))
       (concat
        (when (> info 0)
-         (propertize (format "%s %d" (nerd-icons-codicon "nf-cod-lightbulb") info)
+         (propertize (format "%s %d " (nerd-icons-codicon "nf-cod-lightbulb") info)
                      'face '(:inherit success)))
        (when (> warning 0)
-         (propertize (format " %s %d" (nerd-icons-codicon "nf-cod-warning") warning)
+         (propertize (format "%s %d " (nerd-icons-codicon "nf-cod-warning") warning)
                      'face '(:inherit warning)))
        (when (> error 0)
-         (propertize (format " %s %d" (nerd-icons-codicon "nf-cod-error") error)
+         (propertize (format "%s %d" (nerd-icons-codicon "nf-cod-error") error)
                      'face '(:inherit error)))))))
 
 (defun punch-process-info ()
@@ -101,6 +105,29 @@
     (let ((misc-info (format-mode-line mode-line-misc-info)))
       (unless (string-blank-p misc-info)
         (string-trim misc-info)))))
+
+;; (defun punch-org-info ()
+;;   "Show org information in mode line."
+;;   (when (punch-show-org-info org-timer-countdown-timer-title)
+;;     (propertize org-timer-mode-line-string 'face 'font-lock-string-face))
+;; ""
+;;   )
+
+;; (defun punch-setup-org-hooks ()
+;;   "Setup org timer hooks."
+;;   (add-hook 'org-timer-set-hook #'punch-org-start)
+;;   (add-hook 'org-timer-done-hook #'punch-org-stop))
+
+;; (defun punch-org-start ()
+;;   "Actions when timer starts."
+;;   (setq org-timer-mode-line-string
+;;         (concat "🍅 " (propertize (substring org-timer-countdown-timer-title 0 -1) 'face 'font-lock-string-face)))
+;;   (force-mode-line-update t))
+
+;; (defun punch-org-stop ()
+;;   "Actions when timer stops."
+;;   (setq org-timer-mode-line-string nil)
+;;   (force-mode-line-update t))
 
 (defun punch-lsp-info ()
   "Return current LSP (Eglot or lsp-mode) status for the mode line using nerd-icons."
@@ -183,15 +210,10 @@
   (when (and punch-show-copilot-info (bound-and-true-p copilot-mode))
     (propertize " " 'face '(:inherit success))))
 
-(defun punch-line-spacer ()
-  "Show an empty string."
-  " ")
-
 (defun punch-time-info ()
   "Show time with custom face."
   (when punch-line-show-time-info
     (propertize (format-time-string "%H:%M ") 'face 'punch-line-time-face)))
-
 
 (provide 'punch-line-misc)
 ;;; punch-line-misc.el ends here
