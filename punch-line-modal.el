@@ -51,7 +51,7 @@
              (state-name (upcase (symbol-name state)))
              (background-face (face-background state-face nil t))
              (icon-height (+ 1.0 (* punch-height 0.1)))
-             (raise-value (/ (* punch-height -1) 70.0))
+             (raise-value (/ (* punch-height -1) 72.0))
              (divider (propertize (nerd-icons-powerline "nf-ple-flame_thick")
                                   'face `(:foreground ,background-face
                                          :family "Symbols Nerd Font Mono"

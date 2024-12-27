@@ -8,7 +8,7 @@
 
 ;;; Code:
 
-(defcustom punch-height 8
+(defcustom punch-height 7
   "Width of the box around mode line segments."
   :type 'integer
   :group 'punch-line)

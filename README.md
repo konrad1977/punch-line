@@ -1,5 +1,7 @@
 # Punch line
 
+❤️ [Please sponsor me if you like this package](https://github.com/sponsors/konrad1977)
+
 <p align="center">
   <img src="https://raw.githubusercontent.com/konrad1977/punch-line/refs/heads/master/screenshots/punch-line.png" alt="Screenshot of Punch-line and mode line for Emacs."/>
 </p>
