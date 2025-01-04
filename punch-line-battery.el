@@ -77,7 +77,6 @@
   (let ((current-time (float-time)))
     (when (or (null punch-battery-info-cache)
 	      (> (- current-time punch-battery-info-cache-time) punch-battery-cache-update-interval))
-      (message "Updating Battery- cache")
       (setq punch-battery-info-cache-time current-time)
       (setq punch-battery-info-cache (punch-battery-create-info)))
       punch-battery-info-cache))

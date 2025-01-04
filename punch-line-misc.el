@@ -106,29 +106,6 @@
       (unless (string-blank-p misc-info)
         (string-trim misc-info)))))
 
-;; (defun punch-org-info ()
-;;   "Show org information in mode line."
-;;   (when (punch-show-org-info org-timer-countdown-timer-title)
-;;     (propertize org-timer-mode-line-string 'face 'font-lock-string-face))
-;; ""
-;;   )
-
-;; (defun punch-setup-org-hooks ()
-;;   "Setup org timer hooks."
-;;   (add-hook 'org-timer-set-hook #'punch-org-start)
-;;   (add-hook 'org-timer-done-hook #'punch-org-stop))
-
-;; (defun punch-org-start ()
-;;   "Actions when timer starts."
-;;   (setq org-timer-mode-line-string
-;;         (concat "🍅 " (propertize (substring org-timer-countdown-timer-title 0 -1) 'face 'font-lock-string-face)))
-;;   (force-mode-line-update t))
-
-;; (defun punch-org-stop ()
-;;   "Actions when timer stops."
-;;   (setq org-timer-mode-line-string nil)
-;;   (force-mode-line-update t))
-
 (defun punch-lsp-info ()
   "Return current LSP (Eglot or lsp-mode) status for the mode line using nerd-icons."
   (when punch-show-lsp-info

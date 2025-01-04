@@ -76,7 +76,6 @@
   (let ((current-time (float-time)))
     (when (or (null punch-git-info-cache)
 	      (> (- current-time punch-git-info-cache-time) punch-git-cache-update-interval))
-      (message "Updating Git cache")
       (setq punch-git-info-cache-time current-time)
       (setq punch-git-info-cache (punch-git-info-create)))
       punch-git-info-cache))
