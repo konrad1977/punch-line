@@ -150,6 +150,17 @@
   "Face for displaying current task in mode line."
   :group 'punch-line)
 
+(defface punch-line-system-monitor-cpu-face
+  '((t :inherit font-lock-constant-face))
+  "Face for CPU usage in system monitor."
+  :group 'punch-line)
+
+(defface punch-line-system-monitor-memory-face
+  '((t :inherit font-lock-function-call-face))
+  "Face for memory usage in system monitor."
+  :group 'punch-line)
+
+
 (require 'cl-lib)
 
 (cl-defun adjust-colors (base-face &key background-adjust foreground-adjust

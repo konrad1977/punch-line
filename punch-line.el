@@ -93,6 +93,7 @@ to use for the separator."
   "Create the right section of the mode-line with caching."
   (concat
    (punch-add-separator :str (punch-line-music-info) :separator punch-line-right-separator :leftside t)
+   (punch-add-separator :str (punch-system-monitor-info) :separator punch-line-right-separator :leftside t)
    (punch-add-separator :str (punch-line-col) :separator punch-line-right-separator :leftside t)
    (punch-add-separator :str (punch-buffer-position) :separator punch-line-right-separator :leftside t)
    (punch-add-separator :str (punch-copilot-info) :separator punch-line-right-separator :leftside t)
