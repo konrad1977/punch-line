@@ -23,14 +23,19 @@
   :type 'boolean
   :group 'punch-line)
 
+(defcustom punch-system-monitor-update-interval 5
+  "Interval in seconds for updating the system monitor cache."
+  :type 'number
+  :group 'punch-line)
+
+(defvar punch-system-monitor-cache nil
+  "Stores the current system monitor information.")
+
 (defvar punch-cpu-usage nil
   "Stores the current CPU usage.")
 
 (defvar punch-memory-usage nil
   "Stores the current memory usage.")
-
-(defvar punch-system-monitor-update-interval 5
-  "Number of seconds between updates of CPU and memory usage.")
 
 (defvar punch-system-monitor-last-update 0
   "Time of last update.")
@@ -61,33 +66,34 @@
                     "free -m | awk '/^Mem:/ {print $3}'"))
     (string-to-number (buffer-string))))
 
-(defun punch-update-usage ()
+(defun punch-system-monitor-create ()
   "Update CPU and memory usage."
-  (setq punch-cpu-usage (punch-get-cpu-usage))
-  (setq punch-memory-usage (punch-get-memory-usage))
-  (setq punch-system-monitor-last-update (float-time)))
-
+  (when punch-show-system-monitor
+    (setq punch-cpu-usage (punch-get-cpu-usage))
+    (setq punch-memory-usage (punch-get-memory-usage))
+    (setq punch-system-monitor-last-update (float-time))
+    (format "%s %s  %s %s"
+            (if punch-system-monitor-use-icons
+                (nerd-icons-octicon "nf-oct-cpu")
+              "CPU:")
+            (propertize
+             (if punch-cpu-usage (format "%.1f%%" (string-to-number punch-cpu-usage)) "N/A")
+             'face 'punch-line-system-monitor-cpu-face)
+            (if punch-system-monitor-use-icons
+                (concat (nerd-icons-faicon "nf-fa-memory") " ")
+              "MEM:")
+            (propertize
+             (if punch-memory-usage (format "%.1f GB" (/ punch-memory-usage 1024)) "N/A")
+             'face 'punch-line-system-monitor-memory-face))))
 
 (defun punch-system-monitor-info ()
   "Return a string with current CPU and memory usage."
-  (if punch-show-system-monitor
-      (progn
-        (when (> (- (float-time) punch-system-monitor-last-update) punch-system-monitor-update-interval)
-          (punch-update-usage))
-        (format "%s %s %s %s"
-                (if punch-system-monitor-use-icons
-                    (nerd-icons-octicon "nf-oct-cpu")
-                  "CPU:")
-                (propertize
-                 (if punch-cpu-usage (concat (format "%.1f" (string-to-number punch-cpu-usage)) "%%") "N/A")
-                 'face 'punch-line-system-monitor-cpu-face)
-                (if punch-system-monitor-use-icons
-                    (concat (nerd-icons-faicon "nf-fa-memory") " ")
-                  "MEM:")
-                (propertize
-                 (if punch-memory-usage (format "%.1fGB" (/ punch-memory-usage 1024)) "N/A")
-                 'face 'punch-line-system-monitor-memory-face)))
-    ""))
+  (let ((current-time (float-time)))
+    (when (or (null punch-system-monitor-cache)
+              (> (- current-time punch-system-monitor-last-update) punch-system-monitor-update-interval))
+      (setq punch-system-monitor-last-update current-time)
+      (setq punch-system-monitor-cache (punch-system-monitor-create)))
+      punch-system-monitor-cache))
 
 (provide 'punch-line-systemmonitor)
 ;;; punch-line-systemmonitor.el ends here
