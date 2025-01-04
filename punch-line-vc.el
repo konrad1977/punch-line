@@ -14,6 +14,17 @@
 (require 'vc-git)
 (require 'nerd-icons)
 
+(defvar punch-git-info-cache nil
+  "Cache for Git information.")
+
+(defvar punch-git-info-cache-time 0
+  "Time of last cache update.")
+
+(defcustom punch-git-cache-update-interval 5
+  "Interval in seconds for updating the Git cache."
+  :type 'number
+  :group 'punch-line)
+
 (defcustom punch-show-git-info t
   "If set to t, show Git branch and status."
   :type 'boolean
@@ -34,23 +45,41 @@
   (when-let* ((rev (vc-working-revision file backend)))
     (substring rev 0 (min (length rev) 7))))
 
-(defun punch-git-info ()
-  "Show Git branch and status with custom faces."
+(defvar punch-git-state-faces
+  '((up-to-date . default)
+    (edited . edited)
+    (added . added)
+    (removed . removed)
+    (conflict . conflict))
+  "Mapping between VC states and face names.")
+
+(defun punch-git-info-create ()
+  "Create a cache for Git information."
   (when (and punch-show-git-info
              (buffer-file-name)
-             (vc-git-registered (buffer-file-name)))
-    (let* ((branch (vc-git-mode-line-string (buffer-file-name)))
-           (state (vc-state (buffer-file-name)))
-           (state-face (alist-get state punch-git-faces
-                                  (alist-get 'default punch-git-faces)))
+             (ignore-errors (vc-git-registered (buffer-file-name))))
+    (let* ((branch (ignore-errors (vc-git-mode-line-string (buffer-file-name))))
+           (state (ignore-errors (vc-state (buffer-file-name))))
+           (state-type (alist-get state punch-git-state-faces 'default))
+           (state-face (alist-get state-type punch-git-faces
+                                 (alist-get 'default punch-git-faces)))
            (status-indicator (if (eq state 'up-to-date) "" "")))
       (when branch
         (propertize (format "%s %s%s"
-                            (nerd-icons-octicon "nf-oct-git_branch")
-                            (replace-regexp-in-string "^Git[:-]" "" branch)
-                            status-indicator)
-                    'face state-face)))))
+                           (nerd-icons-octicon "nf-oct-git_branch")
+                           (replace-regexp-in-string "^Git[:-]" "" branch)
+                           status-indicator)
+                   'face state-face)))))
 
+(defun punch-git-info ()
+  "Show Git branch and status with custom faces."
+  (let ((current-time (float-time)))
+    (when (or (null punch-git-info-cache)
+	      (> (- current-time punch-git-info-cache-time) punch-git-cache-update-interval))
+      (message "Updating Git cache")
+      (setq punch-git-info-cache-time current-time)
+      (setq punch-git-info-cache (punch-git-info-create)))
+      punch-git-info-cache))
 
 (provide 'punch-line-vc)
 ;;; punch-line-vc.el ends here

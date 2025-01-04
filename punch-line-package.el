@@ -1,4 +1,4 @@
-;;; punch-line-package.el - punch-line - A minimal mode line for Emacs -*- lexical-binding: t; -*-
+;; punch-line-package.el - punch-line - A minimal mode line for Emacs -*- lexical-binding: t; -*-
 ;;; Code:
 (require 'package)
 (require 'cl-lib)

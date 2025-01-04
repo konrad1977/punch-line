@@ -30,8 +30,19 @@
   :type 'boolean
   :group 'punch-battery)
 
-(defun punch-battery-info ()
-  "Show battery percentage or charging status using text and nerd-font icons on macOS with face-based coloring."
+(defvar punch-battery-info-cache nil
+  "Cache for Battery information.")
+
+(defvar punch-battery-info-cache-time 0
+  "Time of last cache update.")
+
+(defcustom punch-battery-cache-update-interval 60
+  "Interval in seconds for updating the Battery- cache."
+  :type 'number
+  :group 'punch-line)
+
+(defun punch-battery-create-info ()
+  "Create battery percentage or charging status using text and nerd-font icons."
   (when (and punch-show-battery-info
              (bound-and-true-p display-battery-mode))
     (let* ((battery-plist (funcall battery-status-function))
@@ -60,6 +71,16 @@
                    percentage-text)
            'face face)
         "No battery info"))))
+
+(defun punch-battery-info ()
+  "Return battery information, updating the cache if necessary."
+  (let ((current-time (float-time)))
+    (when (or (null punch-battery-info-cache)
+	      (> (- current-time punch-battery-info-cache-time) punch-battery-cache-update-interval))
+      (message "Updating Battery- cache")
+      (setq punch-battery-info-cache-time current-time)
+      (setq punch-battery-info-cache (punch-battery-create-info)))
+      punch-battery-info-cache))
 
 (provide 'punch-line-battery)
 ;;; punch-line-battery.el ends here
