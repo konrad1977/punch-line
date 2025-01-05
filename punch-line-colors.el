@@ -8,69 +8,54 @@
 
 ;;; Code:
 
-(defcustom punch-height 7
-  "Width of the box around mode line segments."
-  :type 'integer
-  :group 'punch-line)
-
 ;;; Evil faces
 (defface punch-line-evil-normal-face
-  `((t :foreground "#FFFFFF" :background "#2D4F67" :weight bold
-       :box (:line-width ,punch-height :color "#2D4F67")))
+  `((t :foreground "#FFFFFF" :background "#2D4F67" :weight bold))
   "Face for Evil normal state."
   :group 'punch-line)
 
 (defface punch-line-evil-insert-face
-  `((t :foreground "#333333" :background "#E6C384" :weight bold
-       :box (:line-width ,punch-height :color "#E6C384")))
+  `((t :foreground "#333333" :background "#E6C384" :weight bold))
   "Face for Evil insert state."
   :group 'punch-line)
 
 (defface punch-line-evil-visual-face
-  `((t :foreground "#333333" :background "#D27E99" :weight bold
-       :box (:line-width ,punch-height :color "#D27E99")))
+  `((t :foreground "#333333" :background "#D27E99" :weight bold))
   "Face for Evil visual state."
   :group 'punch-line)
 
 (defface punch-line-evil-replace-face
-  `((t :foreground "#333333" :background "#FF5D62" :weight bold
-       :box (:line-width ,punch-height :color "#FF5D62")))
+  `((t :foreground "#333333" :background "#FF5D62" :weight bold))
   "Face for Evil replace state."
   :group 'punch-line)
 
 (defface punch-line-evil-emacs-face
-  `((t :foreground "#333333" :background "#B0C4DE" :weight bold
-       :box (:line-width ,punch-height :color "#B0C4DE")))
+  `((t :foreground "#333333" :background "#B0C4DE" :weight bold))
   "Face for Emacs state."
   :group 'punch-line)
 
 (defface punch-line-macro-face
-  `((t :foreground "#333333" :background "#B0C4DE" :weight bold
-       :box (:line-width ,punch-height :color "#B0C4DE")))
+  `((t :foreground "#333333" :background "#B0C4DE" :weight bold))
   "Face for Emacs state."
   :group 'punch-line)
 
 (defface punch-line-macro-recording-face
-  `((t :foreground "#222233" :background "#FF5D62" :weight bold
-       :box (:line-width ,punch-height :color "#FF5D62")))
+  `((t :foreground "#222233" :background "#FF5D62" :weight bold))
   "Face for Emacs state."
   :group 'punch-line)
 
 (defface punch-line-meow-motion-face
-  `((t :foreground "#333333" :background "#B0C4DE" :weight bold
-       :box (:line-width ,punch-height :color "#B0C4DE")))
+  `((t :foreground "#333333" :background "#B0C4DE" :weight bold))
   "Face for Emacs state."
   :group 'punch-line)
 
 (defface punch-line-meow-keypad-face
-  `((t :foreground "#333333" :background "#D27E99" :weight bold
-       :box (:line-width ,punch-height :color "#D27E99")))
+  `((t :foreground "#333333" :background "#D27E99" :weight bold))
   "Face for Emacs state."
   :group 'punch-line)
 
 (defface punch-line-meow-insert-exit-face
-  `((t :foreground "#333333" :background "#E6C384" :weight bold
-       :box (:line-width ,punch-height :color "#E6C384")))
+  `((t :foreground "#333333" :background "#E6C384" :weight bold))
   "Face for Emacs state."
   :group 'punch-line)
 

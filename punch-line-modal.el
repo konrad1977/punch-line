@@ -17,7 +17,30 @@
   :type 'boolean
   :group 'punch-line)
 
-;; Update Evil/Meow colors to faces
+(defcustom punch-line-modal-use-fancy-icon t
+  "Use fancy icons for Evil and Meow modes."
+  :type 'boolean
+  :group 'punch-line)
+
+(defcustom punch-line-modal-divider-style 'flame
+  "Style of the divider icon."
+  :type '(choice
+          (const :tag "Arrow" arrow)
+          (const :tag "Flame" flame)
+          (const :tag "Ice" ice)
+          (const :tag "Circle" circle))
+  :group 'punch-line)
+
+(defun punch-line-get-divider-icon ()
+  "Get the nerd-font icon name based on divider style."
+  (pcase punch-line-modal-divider-style
+    ('arrow "nf-pl-left_hard_divider")
+    ('flame "nf-ple-flame_thick")
+    ('ice "nf-ple-ice_waveform")
+    ('hard "nf-ple-right_hard_divider_inverse")
+    ('circle "nf-ple-right_half_circle_thick")
+    (_ "nf-pl-left_hard_divider")))
+
 (defcustom punch-evil-faces
   '((normal . punch-line-evil-normal-face)
     (insert . punch-line-evil-insert-face)
@@ -40,6 +63,19 @@
       (propertize (format " %s " state-name)
                   'face 'punch-line-inactive-face))))
 
+(cl-defun punch-evil-divider (&key icon-height background-face)
+  "Create a divider for the mode-line."
+  (if punch-line-modal-use-fancy-icon
+      (let* ((divider
+              (propertize
+               (if (fboundp 'nerd-icons-powerline)
+                   (nerd-icons-powerline (punch-line-get-divider-icon) :v-adjust -0.08)
+                 "")
+               'face `(:foreground ,background-face
+                       :height ,icon-height))))
+        divider)
+    (propertize " " 'face `(:foreground ,background-face))))
+
 (defun punch-evil-status ()
   "Show Evil/Meow status with custom face and correct vertical alignment."
   (if punch-line-show-evil-modes
@@ -47,19 +83,19 @@
                          ((and (bound-and-true-p meow-mode) (boundp 'meow-state)) meow-state)
                          (t 'emacs)))
              (state-face (or (cdr (assq state punch-evil-faces))
-                            'punch-line-evil-emacs-face))
+                           'punch-line-evil-emacs-face))
              (state-name (upcase (symbol-name state)))
              (background-face (face-background state-face nil t))
-             (icon-height (+ 1.0 (* punch-height 0.1)))
-             (raise-value (/ (* punch-height -1) 72.0))
-             (divider (propertize (nerd-icons-powerline "nf-ple-flame_thick")
-                                  'face `(:foreground ,background-face
-                                         :family "Symbols Nerd Font Mono"
-                                         :height ,icon-height)
-                                  'display `(raise ,raise-value))))
-        (concat (propertize (format " %s " state-name)
-                          'face `(:inherit ,state-face))
-               divider " "))
+             (divider (punch-evil-divider
+                       :icon-height 1.48
+                       :background-face background-face))
+             )
+        (concat
+         (propertize (format " %s " state-name)
+                     'face `(:inherit ,state-face
+                             :box (:line-width ,punch-line-height :color ,background-face)))
+                divider
+         " "))
     (propertize " " 'face 'punch-line-evil-normal-face)))
 
 (defun punch-evil-mc-info ()

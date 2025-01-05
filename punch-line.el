@@ -32,6 +32,11 @@
 
 (defvar punch-line-is-active nil)
 
+(defcustom punch-line-height 6
+  "Height of the mode-line."
+  :type 'integer
+  :group 'punch-line)
+
 (defcustom punch-line-left-separator "  "
   "Separator used between sections in the mode-line."
   :type 'string
@@ -55,7 +60,7 @@
   "Update the punch-line-inactive-face with the current mode-line-inactive background color."
   (let ((bg-color (punch-get-mode-line-inactive-bg)))
     (set-face-attribute 'punch-line-inactive-face nil
-                        :box `(:line-width ,punch-height :color ,bg-color))))
+                        :box `(:line-width ,punch-line-height :color ,bg-color))))
 
 (cl-defun punch-add-separator (&key str separator leftside (last nil) (face 'punch-line-separator-face))
   "Add a (SEPARATOR) around STR based on the arguments.
