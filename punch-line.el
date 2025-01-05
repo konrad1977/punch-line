@@ -32,7 +32,7 @@
 
 (defvar punch-line-is-active nil)
 
-(defcustom punch-line-height 6
+(defcustom punch-line-height 5
   "Height of the mode-line."
   :type 'integer
   :group 'punch-line)

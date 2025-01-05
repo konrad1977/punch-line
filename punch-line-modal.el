@@ -22,7 +22,7 @@
   :type 'boolean
   :group 'punch-line)
 
-(defcustom punch-line-modal-divider-style 'flame
+(defcustom punch-line-modal-divider-style 'ice
   "Style of the divider icon."
   :type '(choice
           (const :tag "Arrow" arrow)
@@ -63,13 +63,13 @@
       (propertize (format " %s " state-name)
                   'face 'punch-line-inactive-face))))
 
-(cl-defun punch-evil-divider (&key icon-height background-face)
+(cl-defun punch-evil-divider (&key icon-height background-face v-adjust)
   "Create a divider for the mode-line."
   (if punch-line-modal-use-fancy-icon
       (let* ((divider
               (propertize
                (if (fboundp 'nerd-icons-powerline)
-                   (nerd-icons-powerline (punch-line-get-divider-icon) :v-adjust -0.08)
+                   (nerd-icons-powerline (punch-line-get-divider-icon) :v-adjust v-adjust)
                  "")
                'face `(:foreground ,background-face
                        :height ,icon-height))))
@@ -87,9 +87,10 @@
              (state-name (upcase (symbol-name state)))
              (background-face (face-background state-face nil t))
              (divider (punch-evil-divider
-                       :icon-height 1.48
-                       :background-face background-face))
-             )
+                       :icon-height 1.3
+                       :background-face background-face
+                       :v-adjust -0.08
+                       )))
         (concat
          (propertize (format " %s " state-name)
                      'face `(:inherit ,state-face
