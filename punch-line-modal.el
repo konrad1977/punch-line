@@ -12,6 +12,9 @@
 (require 'nerd-icons)
 (require 'punch-line-colors)
 
+(defvar punch-line-height 1
+  "Height of the mode-line.")
+
 (defcustom punch-line-show-evil-modes t
   "Show Evil and Meow modes in the mode-line."
   :type 'boolean
@@ -22,7 +25,15 @@
   :type 'boolean
   :group 'punch-line)
 
-(defcustom punch-line-modal-divider-style 'ice
+(defcustom punch-line-modal-size 'small
+  "Size of the mode-line."
+  :type '(choice
+          (const :tag "Small" small)
+          (const :tag "Medium" medium)
+          (const :tag "Large" large))
+  :group 'punch-line)
+
+(defcustom punch-line-modal-divider-style 'flame
   "Style of the divider icon."
   :type '(choice
           (const :tag "Arrow" arrow)
@@ -30,6 +41,20 @@
           (const :tag "Ice" ice)
           (const :tag "Circle" circle))
   :group 'punch-line)
+
+(defun punch-line-get-divider-icon-height ()
+  "Get the height of the divider icon based on size."
+  (pcase punch-line-modal-size
+    ('small 1.0)
+    ('medium 1.4)
+    ('large 1.89)))
+
+(defun punch-line-modal-height ()
+  "Height of the mode-line based on size."
+  (pcase punch-line-modal-size
+    ('small 1)
+    ('medium 6)
+    ('large 10)))
 
 (defun punch-line-get-divider-icon ()
   "Get the nerd-font icon name based on divider style."
@@ -87,14 +112,14 @@
              (state-name (upcase (symbol-name state)))
              (background-face (face-background state-face nil t))
              (divider (punch-evil-divider
-                       :icon-height 1.3
+                       :icon-height (punch-line-get-divider-icon-height)
                        :background-face background-face
-                       :v-adjust -0.08
+                       :v-adjust (* (/ (punch-line-modal-height) 74.0 2.0) -1.0)
                        )))
         (concat
          (propertize (format " %s " state-name)
                      'face `(:inherit ,state-face
-                             :box (:line-width ,punch-line-height :color ,background-face)))
+                             :box (:line-width ,(punch-line-modal-height) :color ,background-face)))
                 divider
          " "))
     (propertize " " 'face 'punch-line-evil-normal-face)))
