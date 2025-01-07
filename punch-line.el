@@ -84,7 +84,7 @@ to use for the separator."
          (punch-add-separator :str (punch-major-mode) :separator "|")
          (punch-add-separator :str (punch-project-info))
          (punch-add-separator :str (punch-what-am-i-doing-info))
-         (punch-add-separator :str (punch-flycheck-mode-line))
+         (punch-add-separator :str (punch-flycheck-info))
          (punch-add-separator :str (mode-line-segment-hud))
          (punch-process-info)
          )))

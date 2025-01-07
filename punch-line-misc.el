@@ -18,6 +18,12 @@
 (when (featurep 'projectile)
   (require 'projectile))
 
+(defvar-local punch-flycheck-cache nil
+  "Cache for flycheck information.")
+
+(defvar-local punch-flycheck-cache-timer nil
+  "Timer for clearing flycheck cache.")
+
 (defgroup punch-line nil
   "Customization group for punch-line."
   :group 'convenience)
@@ -72,8 +78,13 @@
   :type 'boolean
   :group 'punch-line)
 
-(defun punch-flycheck-mode-line ()
-  "Custom flycheck mode-line with icons and counts."
+(defcustom punch-flycheck-cache-interval 3
+  "Time in seconds to cache flycheck information."
+  :type 'integer
+  :group 'punch-line)
+
+(defun punch-flycheck-create-cache ()
+  "Create a cache for flycheck information."
   (when (and (bound-and-true-p flycheck-mode)
              punch-show-flycheck-info
              (or flycheck-current-errors
@@ -92,6 +103,17 @@
        (when (> error 0)
          (propertize (format "%s %d" (nerd-icons-codicon "nf-cod-error") error)
                      'face '(:inherit error)))))))
+
+
+(defun punch-flycheck-info ()
+  "Return flycheck information, updating the cache if necessary."
+  (let ((current-time (float-time)))
+    (when (or (null punch-flycheck-cache)
+	      (> (- current-time punch-flycheck-cache-time) punch-flycheck-cache-interval))
+      (setq punch-flycheck-cache-time current-time)
+      (setq punch-flycheck-cache (punch-flycheck-create-cache)))
+      punch-flycheck-cache))
+
 
 (defun punch-process-info ()
   "Show information about active processes."

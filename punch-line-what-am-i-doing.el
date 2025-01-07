@@ -30,6 +30,12 @@
 (defvar punch-line-current-task-index 0
   "Index of the current task in the task list.")
 
+(defvar punch-what-am-i-doing-info-cache nil
+  "Cache for what-am-i-doing information.")
+
+(defvar punch-what-am-i-doing-info-cache-valid nil
+  "Flag indicating if the cache is valid.")
+
 ;;;###autoload
 (defun punch-load-tasks ()
   "Load the saved tasks explicitly."
@@ -63,6 +69,7 @@
       (message "Task cannot be empty.")
     (progn
       (setq punch-line-task-list (append punch-line-task-list (list task)))
+      (punch-invalidate-what-am-i-doing-cache)
       (punch-save-tasks))))
 
 (defun punch-line-what-am-i-doing-done ()
@@ -73,6 +80,7 @@
       (setq punch-line-task-list (delete completed-task punch-line-task-list))
       (when (>= punch-line-current-task-index (length punch-line-task-list))
         (setq punch-line-current-task-index (max 0 (1- (length punch-line-task-list)))))
+      (punch-invalidate-what-am-i-doing-cache)
       (punch-save-tasks)
       (message "Task completed: %s" completed-task))))
 
@@ -107,23 +115,39 @@
           (mod (1- punch-line-current-task-index) (length punch-line-task-list)))
     (message "Current task: %s" (nth punch-line-current-task-index punch-line-task-list))))
 
-(defun punch-what-am-i-doing-info ()
-  "Show what-am-i-doing information with custom face."
+(defun punch-create-what-am-i-doing-info ()
+  "Create the what-am-i-doing information string."
   (when (and punch-show-what-am-i-doing-info
              punch-line-task-list
              (> (length punch-line-task-list) 0))
     (let* ((current-task (nth punch-line-current-task-index punch-line-task-list))
            (task-count (length punch-line-task-list))
            (count-info (if (> task-count 1)
-                           (propertize (format " (%d/%d)"
-                                               (1+ punch-line-current-task-index)
-                                               task-count)
-                                       'face 'punch-line-what-am-i-doing-count-face)
-                         "")))
+                          (propertize (format " (%d/%d)"
+                                            (1+ punch-line-current-task-index)
+                                            task-count)
+                                    'face 'punch-line-what-am-i-doing-count-face)
+                        "")))
       (concat (propertize (nerd-icons-faicon "nf-fa-list_check") 'face 'warning)
               "  "
               (propertize current-task 'face 'punch-line-what-am-i-doing-face)
               count-info))))
+
+(defun punch-what-am-i-doing-info ()
+  "Show what-am-i-doing information with custom face and caching."
+  (if (and punch-what-am-i-doing-info-cache-valid
+           punch-what-am-i-doing-info-cache)
+      punch-what-am-i-doing-info-cache
+    (setq punch-what-am-i-doing-info-cache (punch-create-what-am-i-doing-info)
+          punch-what-am-i-doing-info-cache-valid t)
+    punch-what-am-i-doing-info-cache))
+
+
+(defun punch-invalidate-what-am-i-doing-cache ()
+  "Invalidate the what-am-i-doing information cache."
+  (setq punch-what-am-i-doing-info-cache-valid nil
+        punch-what-am-i-doing-info-cache nil))
+
 
 (provide 'punch-line-what-am-i-doing)
 ;;; punch-line-what-am-i-doing.el ends here

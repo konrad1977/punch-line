@@ -14,10 +14,10 @@
 (require 'vc-git)
 (require 'nerd-icons)
 
-(defvar punch-git-info-cache nil
+(defvar-local punch-git-info-cache nil
   "Cache for Git information.")
 
-(defvar punch-git-info-cache-time 0
+(defvar-local punch-git-info-cache-time 0
   "Time of last cache update.")
 
 (defcustom punch-git-cache-update-interval 5

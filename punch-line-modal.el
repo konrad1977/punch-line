@@ -33,7 +33,7 @@
           (const :tag "Large" large))
   :group 'punch-line)
 
-(defcustom punch-line-modal-divider-style 'flame
+(defcustom punch-line-modal-divider-style 'circle
   "Style of the divider icon."
   :type '(choice
           (const :tag "Arrow" arrow)
@@ -46,15 +46,15 @@
   "Get the height of the divider icon based on size."
   (pcase punch-line-modal-size
     ('small 1.0)
-    ('medium 1.4)
-    ('large 1.89)))
+    ('medium 1.5)
+    ('large 1.77)))
 
 (defun punch-line-modal-height ()
   "Height of the mode-line based on size."
   (pcase punch-line-modal-size
     ('small 1)
-    ('medium 6)
-    ('large 10)))
+    ('medium 5)
+    ('large 9)))
 
 (defun punch-line-get-divider-icon ()
   "Get the nerd-font icon name based on divider style."
@@ -114,7 +114,7 @@
              (divider (punch-evil-divider
                        :icon-height (punch-line-get-divider-icon-height)
                        :background-face background-face
-                       :v-adjust (* (/ (punch-line-modal-height) 74.0 2.0) -1.0)
+                       :v-adjust (* (/ (punch-line-modal-height) 68.0 2.0) -1.0)
                        )))
         (concat
          (propertize (format " %s " state-name)
