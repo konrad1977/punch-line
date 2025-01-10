@@ -145,6 +145,21 @@
   "Face for memory usage in system monitor."
   :group 'punch-line)
 
+(defface punch-line-music-face
+  '((t (:inherit font-lock-comment-face)))
+  "Face for inactive mode-line elements."
+  :group 'punch-line)
+
+(defface punch-line-music-apple-face
+  '((t (:foreground "#ff2d55")))
+  "Face for apple music mode-line elements."
+  :group 'punch-line)
+
+(defface punch-line-music-spotify-face
+  '((t (:foreground "#1db954")))
+  "Face for spotify mode-line elements."
+  :group 'punch-line)
+
 
 (require 'cl-lib)
 

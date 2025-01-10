@@ -32,21 +32,6 @@ If a plist, it can contain the following properties:
   :type 'number
   :group 'punch-line)
 
-(defface punch-line-music-face
-  '((t (:inherit font-lock-comment-face)))
-  "Face for inactive mode-line elements."
-  :group 'punch-line)
-
-(defface punch-line-music-apple-face
-  '((t (:foreground "#ff2d55")))
-  "Face for apple music mode-line elements."
-  :group 'punch-line)
-
-(defface punch-line-music-spotify-face
-  '((t (:foreground "#1db954")))
-  "Face for spotify mode-line elements."
-  :group 'punch-line)
-
 (defvar punch-music-info-cache ""
   "Cache for music information.")
 

@@ -30,16 +30,16 @@
   :type 'boolean
   :group 'punch-battery)
 
+(defcustom punch-battery-cache-update-interval 60
+  "Interval in seconds for updating the Battery- cache."
+  :type 'number
+  :group 'punch-line)
+
 (defvar punch-battery-info-cache nil
   "Cache for Battery information.")
 
 (defvar punch-battery-info-cache-time 0
   "Time of last cache update.")
-
-(defcustom punch-battery-cache-update-interval 60
-  "Interval in seconds for updating the Battery- cache."
-  :type 'number
-  :group 'punch-line)
 
 (defun punch-battery-create-info ()
   "Create battery percentage or charging status using text and nerd-font icons."
