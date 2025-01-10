@@ -209,10 +209,6 @@
   (when (and punch-show-copilot-info (bound-and-true-p copilot-mode))
     (propertize " " 'face '(:inherit success))))
 
-(defun punch-time-info ()
-  "Show time with custom face."
-  (when punch-line-show-time-info
-    (propertize (format-time-string "%H:%M ") 'face 'punch-line-time-face)))
 
 (provide 'punch-line-misc)
 ;;; punch-line-misc.el ends here

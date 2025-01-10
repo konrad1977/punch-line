@@ -101,16 +101,12 @@ to use for the separator."
    (punch-add-separator :str (punch-misc-info) :separator punch-line-right-separator :leftside t)
    (punch-add-separator :str (punch-git-info) :separator punch-line-right-separator :leftside t)
    (punch-add-separator :str (punch-weather-info) :separator punch-line-right-separator :leftside t)
-   (punch-add-separator :str (punch-battery-info) :separator punch-line-right-separator :leftside t)
+   (punch-battery-info)
    (punch-time-info)))
 
 (defun punch-mode-line-inactive-format ()
   "Inactive format with Evil status and buffer name in gray."
-  (list (concat
-         (punch-evil-status-inactive)
-         (propertize "|" 'face 'punch-line-inactive-face)
-         (propertize (format " %s " (buffer-name))
-                     'face 'punch-line-inactive-face))))
+  (propertize (concat " " (punch-buffer-name)) 'face 'punch-line-inactive-face))
 
 (defun punch-fill-to-right ()
   "Return whitespace to push the rest of the mode-line to the right."

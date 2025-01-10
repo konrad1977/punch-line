@@ -126,7 +126,7 @@
   :group 'punch-line)
 
 (defface punch-line-what-am-i-doing-face
-  '((t :inherit mode-line-buffer-id))
+  '((t :inherit mode-line-emphasis))
   "Face for the separator between sections in punch-line."
   :group 'punch-line)
 

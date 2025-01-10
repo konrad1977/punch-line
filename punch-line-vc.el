@@ -30,6 +30,11 @@
   :type 'boolean
   :group 'punch-line)
 
+(defcustom punch-line-vc-use-github-icon t
+  "If set to t, use the GitHub icon for Git branch."
+  :type 'boolean
+  :group 'punch-line)
+
 (defcustom punch-git-faces
   '((edited . punch-line-git-edited-face)
     (added . punch-line-git-added-face)
@@ -53,6 +58,12 @@
     (conflict . conflict))
   "Mapping between VC states and face names.")
 
+(defun punch-git-icon ()
+  "Return the Git icon."
+  (if punch-line-vc-use-github-icon
+      (nerd-icons-octicon "nf-oct-mark_github")
+    (nerd-icons-octicon "nf-oct-git_branch")))
+
 (defun punch-git-info-create ()
   "Create a cache for Git information."
   (when (and punch-show-git-info
@@ -65,11 +76,13 @@
                                  (alist-get 'default punch-git-faces)))
            (status-indicator (if (eq state 'up-to-date) "" "")))
       (when branch
-        (propertize (format "%s %s%s"
-                           (nerd-icons-octicon "nf-oct-git_branch")
-                           (replace-regexp-in-string "^Git[:-]" "" branch)
-                           status-indicator)
-                   'face state-face)))))
+        (concat
+         (propertize (punch-git-icon) 'face 'mode-line-highlight)
+         " "
+         (propertize (format " %s%s"
+                             (replace-regexp-in-string "^Git[:-]" "" branch)
+                             status-indicator)
+                     'face state-face))))))
 
 (defun punch-git-info ()
   "Show Git branch and status with custom faces."

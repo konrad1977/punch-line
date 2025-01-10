@@ -116,9 +116,11 @@
     (unless (and punch-weather-temperature punch-weather-icon)
       (punch-weather--fetch-data))
     (if (and punch-weather-temperature punch-weather-icon)
-        (propertize
-         (format "%s %s" punch-weather-icon punch-weather-temperature)
-         'help-echo punch-weather-description)
+        (concat
+         (propertize punch-weather-icon 'help-echo punch-weather-description)
+         " "
+         (propertize punch-weather-temperature 'face 'mode-line
+                     'help-echo punch-weather-description))
       "Loading...")))
 
 (defun punch-weather-update ()

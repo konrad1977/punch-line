@@ -105,6 +105,8 @@
   (when punch-line-task-list
     (setq punch-line-current-task-index
           (mod (1+ punch-line-current-task-index) (length punch-line-task-list)))
+
+    (punch-invalidate-what-am-i-doing-cache)
     (message "Current task: %s" (nth punch-line-current-task-index punch-line-task-list))))
 
 (defun punch-line-what-am-i-doing-previous-task ()
@@ -113,6 +115,8 @@
   (when punch-line-task-list
     (setq punch-line-current-task-index
           (mod (1- punch-line-current-task-index) (length punch-line-task-list)))
+
+    (punch-invalidate-what-am-i-doing-cache)
     (message "Current task: %s" (nth punch-line-current-task-index punch-line-task-list))))
 
 (defun punch-create-what-am-i-doing-info ()
@@ -128,10 +132,10 @@
                                             task-count)
                                     'face 'punch-line-what-am-i-doing-count-face)
                         "")))
-      (concat (propertize (nerd-icons-faicon "nf-fa-list_check") 'face 'warning)
-              "  "
-              (propertize current-task 'face 'punch-line-what-am-i-doing-face)
-              count-info))))
+      (concat (propertize (nerd-icons-faicon "nf-fa-gripfire") 'face 'mode-line-highlight)
+          " "
+          (propertize current-task 'face 'punch-line-what-am-i-doing-face)
+          count-info))))
 
 (defun punch-what-am-i-doing-info ()
   "Show what-am-i-doing information with custom face and caching."
