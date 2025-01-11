@@ -103,6 +103,32 @@ M-x punch-line-what-am-i-doing-previous-task # Switch to previous task
 (setq punch-line-right-separator "  ")
 ```
 
+<p align="center">
+  <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/modal_arrow.png" 
+  alt="Arrow"/>
+</p>
+
+<p align="center">
+  <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/modal_circle.png" 
+  alt="Circle"/>
+</p>
+
+<p align="center">
+  <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/modal_flame.png" 
+  alt="Flame"/>
+</p>
+
+<p align="center">
+  <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/modal_ice.png" 
+  alt="Ice"/>
+</p>
+
+<p align="center">
+  <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/modal_none.png" 
+  alt="None"/>
+</p>
+
+
 ### Weather Configuration
 
 ```elisp
@@ -117,6 +143,11 @@ M-x punch-line-what-am-i-doing-previous-task # Switch to previous task
 (setq punch-line-music-info '(:service apple)  ; or 'spotify
       punch-line-music-max-length 80)
 ```
+
+<p align="center">
+  <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/music.png" 
+  alt="None"/>
+</p>
 
 ## Cache Settings
 
