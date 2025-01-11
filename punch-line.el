@@ -45,8 +45,6 @@
   "Return non-nil if the current window is active."
   (let ((current (get-buffer-window))
         (active punch-line-active-window))
-    (message "Current: %s, Active: %s, Equal: %s"
-             current active (eq current active))
     (eq current active)))
 
 (defcustom punch-line-left-separator "  "
@@ -119,14 +117,6 @@ to use for the separator."
   "Inactive format with Evil status and buffer name in gray."
   (propertize (concat " " (punch-buffer-name)) 'face 'punch-line-inactive-face))
 
-;; (defun punch-line-format ()
-;;   "Generate the mode-line format with improved caching."
-;;   (if punch-line-is-active
-;;       (list (punch-line-format-left)
-;;             (punch-line-get-fill)
-;;             (punch-line-format-right))
-;;     (punch-mode-line-inactive-format)))
-
 (defun punch-line-format ()
   "Generate the mode-line format."
   (if (punch-line-window-active-p)
@@ -134,19 +124,6 @@ to use for the separator."
             (punch-line-get-fill)
             (punch-line-format-right))
     (punch-line-format-inactive)))
-
-;; (defun punch-line-update (&optional _)
-;;   "Update mode-line for all windows."
-;;   (let ((active-window (selected-window)))
-;;     (walk-windows
-;;      (lambda (window)
-;;        (with-current-buffer (window-buffer window)
-;;          (let ((was-active punch-line-is-active)
-;;                (is-active (eq window active-window)))
-;;            (when (not (eq was-active is-active))
-;;              (setq-local punch-line-is-active is-active)
-;;              (force-mode-line-update)))))
-;;      'no-minibuf t)))
 
 (defun punch-line-update (&optional _)
   "Update mode-line for all windows."
