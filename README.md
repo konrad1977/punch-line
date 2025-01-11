@@ -5,15 +5,7 @@ A modern, feature-rich mode line for Emacs
 ❤️ [Please sponsor me if you like this package](https://github.com/sponsors/konrad1977)
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/konrad1977/punch-line/refs/heads/master/screenshots/modal_arrow.png" alt="Modal arrow config"/>
-</p>
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/konrad1977/punch-line/refs/heads/master/screenshots/modal_flame.png" alt="Modal flame config"/>
-</p>
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/konrad1977/punch-line/refs/heads/master/screenshots/modal_circle.png" alt="Modal flame config"/>
+  <img src="https://raw.githubusercontent.com/konrad1977/punch-line/refs/heads/master/screenshots/punch-line.png" alt="Screenshot of Punch-line and mode line for Emacs."/>
 </p>
 
 ## Features
@@ -80,10 +72,19 @@ M-x punch-line-what-am-i-doing-show-all      # Display all tasks
 M-x punch-line-what-am-i-doing-next-task     # Switch to next task
 M-x punch-line-what-am-i-doing-previous-task # Switch to previous task
 ```
+<p align="center">
+  <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/what_am_i_doing.png" 
+  alt="Screenshot of a what I am currently working on."/>
+</p>
 
 <p align="center">
   <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/get-shit-done.png" 
   alt="Screenshot of a what I am currently working on."/>
+</p>
+
+<p align="center">
+  <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/what-am-i-all.png" 
+  alt="All tasks."/>
 </p>
 
 ## Customization
