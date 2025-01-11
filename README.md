@@ -104,35 +104,28 @@ M-x punch-line-what-am-i-doing-previous-task # Switch to previous task
 ```
 
 <p align="left">
-```elisp
-(setq punch-line-modal-divider-style 'arrow)
-```
-  <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/modal_arrow.png" 
-  alt="Arrow"/>
+    Arrow
+  <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/modal_arrow.png" alt="Arrow"/>
 </p>
 
 <p align="left">
-  Circle
-  <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/modal_circle.png" 
-  alt="Circle"/>
+    Circle
+  <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/modal_circle.png" alt="Circle"/>
 </p>
 
 <p align="left">
-  Flame
-  <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/modal_flame.png" 
-  alt="Flame"/>
+    Flame
+  <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/modal_flame.png" alt="Flame"/>
 </p>
 
 <p align="left">
-  Ice
-  <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/modal_ice.png" 
-  alt="Ice"/>
+    Ice
+  <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/modal_ice.png" alt="Ice"/>
 </p>
 
 <p align="left">
-  None
-  <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/modal_none.png" 
-  alt="None"/>
+    None
+  <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/modal_none.png" alt="None"/>
 </p>
 
 
