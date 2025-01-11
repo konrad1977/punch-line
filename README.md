@@ -103,27 +103,34 @@ M-x punch-line-what-am-i-doing-previous-task # Switch to previous task
 (setq punch-line-right-separator "  ")
 ```
 
-<p align="center">
+<p align="left">
+```elisp
+(setq punch-line-modal-divider-style 'arrow)
+```
   <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/modal_arrow.png" 
   alt="Arrow"/>
 </p>
 
-<p align="center">
+<p align="left">
+  Circle
   <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/modal_circle.png" 
   alt="Circle"/>
 </p>
 
-<p align="center">
+<p align="left">
+  Flame
   <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/modal_flame.png" 
   alt="Flame"/>
 </p>
 
-<p align="center">
+<p align="left">
+  Ice
   <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/modal_ice.png" 
   alt="Ice"/>
 </p>
 
-<p align="center">
+<p align="left">
+  None
   <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/modal_none.png" 
   alt="None"/>
 </p>
