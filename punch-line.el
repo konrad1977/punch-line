@@ -42,11 +42,6 @@
   :type 'string
   :group 'punch-line)
 
-(defcustom punch-line-separator-face 'punch-line-separator-face
-  "Face for the separator between sections."
-  :type 'face
-  :group 'punch-line)
-
 (defun punch-get-mode-line-inactive-bg ()
   "Get the background color of the mode-line-inactive face."
   (face-background 'mode-line-inactive nil t))
@@ -63,15 +58,15 @@ Add a separator after STR if it is not empty or last.  LAST
 indicates if this is the last element.  FACE specifies which face
 to use for the separator."
   (if (and str (not (string-empty-p str)) (not last))
-      (if leftside
-          (progn
-            (if separator
-                (concat str (propertize separator 'face face))
-            (concat str (propertize punch-line-left-separator 'face face))))
-        (progn
-          (if separator
-              (concat (propertize separator 'face face) str)
-            (concat (propertize punch-line-left-separator 'face face) str))))
+      (if (not separator)
+          str
+        (let* ((height (punch-line-get-divider-icon-height))
+               (divider (propertize separator
+                                  'face `(:inherit ,face
+                                         :height ,height))))
+          (if leftside
+              (concat str divider)
+            (concat divider str))))
     str))
 
 (defun punch-left-section ()
@@ -82,12 +77,11 @@ to use for the separator."
          (punch-evil-status)
          (punch-buffer-name)
          (punch-add-separator :str (punch-major-mode) :separator "|")
-         (punch-add-separator :str (punch-project-info))
-         (punch-add-separator :str (punch-what-am-i-doing-info))
-         (punch-add-separator :str (punch-flycheck-info))
-         (punch-add-separator :str (mode-line-segment-hud))
-         (punch-process-info)
-         )))
+         (punch-add-separator :str (punch-project-info) :separator punch-line-left-separator)
+         (punch-add-separator :str (punch-what-am-i-doing-info) :separator punch-line-left-separator)
+         (punch-add-separator :str (punch-flycheck-info) :separator punch-line-left-separator)
+         (punch-add-separator :str (mode-line-segment-hud) :separator punch-line-left-separator)
+         (punch-process-info))))
 
 (defun punch-right-section ()
   "Create the right section of the mode-line with caching."
@@ -111,7 +105,7 @@ to use for the separator."
 (defun punch-fill-to-right ()
   "Return whitespace to push the rest of the mode-line to the right."
   (let ((right-section (or (punch-right-section) "")))
-    (propertize " " 'display `((space :align-to (- right ,(string-width right-section)))))))
+    (propertize " " 'display `((space :align-to (- right ,(- (string-width right-section) 1)))))))
 
 (defun punch-mode-line-format ()
   "Generate the mode-line format with improved caching."

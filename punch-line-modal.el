@@ -166,7 +166,7 @@
     (concat
      " "
      divider
-     (propertize (format-time-string " %H:%M ")
+     (propertize (format-time-string " %H:%M  ")
                  'face `(:inherit ,state-face
                                   :background ,background-color))
      )))
