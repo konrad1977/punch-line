@@ -32,6 +32,12 @@
 
 (defvar punch-line-is-active nil)
 
+(defvar-local punch-line--cached-fill nil
+  "Cached fill for the mode-line.")
+
+(defvar-local punch-line--cached-right-width nil
+  "Cached width of the right section of the mode-line.")
+
 (defcustom punch-line-left-separator "  "
   "Separator used between sections in the mode-line."
   :type 'string
@@ -42,17 +48,17 @@
   :type 'string
   :group 'punch-line)
 
-(defun punch-get-mode-line-inactive-bg ()
+(defun punch-line-inactive-bg ()
   "Get the background color of the mode-line-inactive face."
   (face-background 'mode-line-inactive nil t))
 
 (defun punch-update-inactive-face ()
   "Update the punch-line-inactive-face with the current mode-line-inactive background color."
-  (let ((bg-color (punch-get-mode-line-inactive-bg)))
+  (let ((bg-color (punch-line-inactive-bg)))
     (set-face-attribute 'punch-line-inactive-face nil
                         :box `(:line-width ,(punch-line-modal-height) :color ,bg-color))))
 
-(cl-defun punch-add-separator (&key str separator leftside (last nil) (face 'punch-line-separator-face))
+(cl-defun punch-line-add-separator (&key str separator leftside (last nil) (face 'punch-line-separator-face))
   "Add a (SEPARATOR) around STR based on the arguments.
 Add a separator after STR if it is not empty or last.  LAST
 indicates if this is the last element.  FACE specifies which face
@@ -69,32 +75,32 @@ to use for the separator."
             (concat divider str))))
     str))
 
-(defun punch-left-section ()
+(defun punch--line-format-left ()
   "Create the left section of the mode-line with caching."
   (list (concat
          (punch-macro-info)
          (punch-evil-mc-info)
          (punch-evil-status)
          (punch-buffer-name)
-         (punch-add-separator :str (punch-major-mode) :separator "|")
-         (punch-add-separator :str (punch-project-info) :separator punch-line-left-separator)
-         (punch-add-separator :str (punch-what-am-i-doing-info) :separator punch-line-left-separator)
-         (punch-add-separator :str (punch-flycheck-info) :separator punch-line-left-separator)
-         (punch-add-separator :str (mode-line-segment-hud) :separator punch-line-left-separator)
+         (punch-line-add-separator :str (punch-major-mode) :separator "|")
+         (punch-line-add-separator :str (punch-project-info) :separator punch-line-left-separator)
+         (punch-line-add-separator :str (punch-what-am-i-doing-info) :separator punch-line-left-separator)
+         (punch-line-add-separator :str (punch-flycheck-info) :separator punch-line-left-separator)
+         (punch-line-add-separator :str (mode-line-segment-hud) :separator punch-line-left-separator)
          (punch-process-info))))
 
-(defun punch-right-section ()
+(defun punch-line-format-right ()
   "Create the right section of the mode-line with caching."
   (concat
-   (punch-add-separator :str (punch-line-music-info) :separator punch-line-right-separator :leftside t)
-   (punch-add-separator :str (punch-system-monitor-info) :separator punch-line-right-separator :leftside t)
-   (punch-add-separator :str (punch-line-col) :separator punch-line-right-separator :leftside t)
-   (punch-add-separator :str (punch-buffer-position) :separator punch-line-right-separator :leftside t)
-   (punch-add-separator :str (punch-copilot-info) :separator punch-line-right-separator :leftside t)
-   (punch-add-separator :str (punch-term-info) :separator punch-line-right-separator :leftside t)
-   (punch-add-separator :str (punch-misc-info) :separator punch-line-right-separator :leftside t)
-   (punch-add-separator :str (punch-git-info) :separator punch-line-right-separator :leftside t)
-   (punch-add-separator :str (punch-weather-info) :separator punch-line-right-separator :leftside t)
+   (punch-line-add-separator :str (punch-line-music-info) :separator punch-line-right-separator :leftside t)
+   (punch-line-add-separator :str (punch-system-monitor-info) :separator punch-line-right-separator :leftside t)
+   (punch-line-add-separator :str (punch-line-col) :separator punch-line-right-separator :leftside t)
+   (punch-line-add-separator :str (punch-buffer-position) :separator punch-line-right-separator :leftside t)
+   (punch-line-add-separator :str (punch-copilot-info) :separator punch-line-right-separator :leftside t)
+   (punch-line-add-separator :str (punch-term-info) :separator punch-line-right-separator :leftside t)
+   (punch-line-add-separator :str (punch-misc-info) :separator punch-line-right-separator :leftside t)
+   (punch-line-add-separator :str (punch-git-info) :separator punch-line-right-separator :leftside t)
+   (punch-line-add-separator :str (punch-weather-info) :separator punch-line-right-separator :leftside t)
    (punch-battery-info)
    (punch-time-info)))
 
@@ -102,50 +108,51 @@ to use for the separator."
   "Inactive format with Evil status and buffer name in gray."
   (propertize (concat " " (punch-buffer-name)) 'face 'punch-line-inactive-face))
 
-(defun punch-fill-to-right ()
-  "Return whitespace to push the rest of the mode-line to the right."
-  (let ((right-section (or (punch-right-section) "")))
-    (propertize " " 'display `((space :align-to (- right ,(- (string-width right-section) 1)))))))
-
-(defun punch-mode-line-format ()
+(defun punch-line-format ()
   "Generate the mode-line format with improved caching."
   (if punch-line-is-active
-      (list (punch-left-section)
-            (punch-fill-to-right)  ; Ta bort ':eval och quote
-            (punch-right-section))
+      (list (punch--line-format-left)
+            (punch-line-get-fill)
+            (punch-line-format-right))
     (punch-mode-line-inactive-format)))
 
-(defun punch-update-mode-line (&optional _)
+(defun punch-line-update (&optional _)
   "Update mode-line for all windows."
   (let ((active-window (selected-window)))
-    (dolist (frame (frame-list))
-      (dolist (window (window-list frame))
-        (with-current-buffer (window-buffer window)
-          (setq-local punch-line-is-active (eq window active-window))
-          (force-mode-line-update))))))
+    (walk-windows
+     (lambda (window)
+       (with-current-buffer (window-buffer window)
+         (let ((was-active punch-line-is-active)
+               (is-active (eq window active-window)))
+           (when (not (eq was-active is-active))
+             (setq-local punch-line-is-active is-active)
+             (force-mode-line-update)))))
+     'no-minibuf t)))
 
-(defun punch-set-mode-line ()
+(defun punch-line-set-mode-line ()
   "Set the mode-line format for punch-line."
-  (setq-default mode-line-format '(:eval (punch-mode-line-format))))
+  (setq-default mode-line-format '(:eval (punch-line-format))))
 
-(defun punch-register-hooks ()
+(defun punch-line-register-hooks ()
   "Register hooks to update the mode-line."
-  (add-hook 'post-command-hook #'punch-update-mode-line)
-  (add-hook 'window-configuration-change-hook #'punch-update-mode-line)
-  (add-hook 'focus-in-hook #'punch-update-mode-line)
-  (add-hook 'focus-out-hook #'punch-update-mode-line)
-  (add-hook 'window-buffer-change-functions #'punch-update-mode-line)  ; Add this hook
-  (add-hook 'window-state-change-hook #'punch-update-mode-line)
+  (add-hook 'post-command-hook #'punch-line-update)
+  (add-hook 'window-configuration-change-hook #'punch-line-update)
+  (add-hook 'focus-in-hook #'punch-line-update)
+  (add-hook 'focus-out-hook #'punch-line-update)
+  (add-hook 'window-buffer-change-functions #'punch-line-update)  ; Add this hook
+  (add-hook 'window-state-change-hook #'punch-line-update)
+  (add-hook 'window-size-change-functions (lambda (_) (punch-line-invalidate-fill-cache)))
   (add-hook 'after-load-theme-hook #'punch-update-inactive-face))
 
-(defun punch-remove-hooks ()
+(defun punch-line-remove-hooks ()
   "Remove hooks to update the mode-line."
-  (remove-hook 'post-command-hook #'punch-update-mode-line)
-  (remove-hook 'window-configuration-change-hook #'punch-update-mode-line)
-  (remove-hook 'focus-in-hook #'punch-update-mode-line)
-  (remove-hook 'focus-out-hook #'punch-update-mode-line)
-  (remove-hook 'window-buffer-change-functions #'punch-update-mode-line)  ; Remove this hook
-  (remove-hook 'window-state-change-hook #'punch-update-mode-line)
+  (remove-hook 'post-command-hook #'punch-line-update)
+  (remove-hook 'window-configuration-change-hook #'punch-line-update)
+  (remove-hook 'focus-in-hook #'punch-line-update)
+  (remove-hook 'focus-out-hook #'punch-line-update)
+  (remove-hook 'window-buffer-change-functions #'punch-line-update)  ; Remove this hook
+  (remove-hook 'window-state-change-hook #'punch-line-update)
+  (remove-hook 'window-size-change-functions (lambda (_) (punch-line-invalidate-fill-cache)))
   (remove-hook 'after-load-theme-hook #'punch-update-inactive-face))
 
 (define-minor-mode punch-line-mode
@@ -155,13 +162,42 @@ to use for the separator."
   :lighter nil
   (if punch-line-mode
       (progn
-        (punch-set-mode-line)
-        (punch-register-hooks)
+        (punch-line-set-mode-line)
+        (punch-line-register-hooks)
         (punch-update-inactive-face)
-        (punch-update-mode-line))
+        (punch-line-update))
     (setq-default mode-line-format (default-value 'mode-line-format))
-    (punch-remove-hooks)
+    (punch-line-remove-hooks)
     (force-mode-line-update t)))
+
+(defun punch-line-calculate-fill (right-section)
+  "Calculate the fill space needed to right-align the RIGHT-SECTION."
+  (let ((right-width (string-width (or right-section ""))))
+    (setq punch-line--cached-right-width right-width)
+    (propertize " " 'display
+                `((space :align-to (- right ,(- right-width 1)))))))
+
+(defun punch-line-get-fill ()
+  "Get the fill space needed to right-align content with caching."
+  (let* ((right-section (punch-line-format-right))
+         (current-width (string-width (or right-section ""))))
+    (if (and punch-line--cached-fill
+             punch-line--cached-right-width
+             (= current-width punch-line--cached-right-width))
+        punch-line--cached-fill
+      (setq punch-line--cached-fill
+            (punch-line-calculate-fill right-section)))))
+
+(defun punch-line-invalidate-fill-cache ()
+  "Invalidate the fill cache."
+  (setq punch-line--cached-fill nil
+        punch-line--cached-right-width nil))
+
+;; Add this to your cache invalidation logic
+(defun punch-line-invalidate-caches ()
+  "Invalidate all caches."
+  (punch-line-invalidate-cache)  ; Your existing cache invalidation
+  (punch-line-invalidate-fill-cache))
 
 (provide 'punch-line)
 ;;; punch-line.el ends here
