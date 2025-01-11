@@ -38,6 +38,17 @@
 (defvar-local punch-line--cached-right-width nil
   "Cached width of the right section of the mode-line.")
 
+(defvar punch-line-active-window nil
+  "Stores the currently active window.")
+
+(defun punch-line-window-active-p ()
+  "Return non-nil if the current window is active."
+  (let ((current (get-buffer-window))
+        (active punch-line-active-window))
+    (message "Current: %s, Active: %s, Equal: %s"
+             current active (eq current active))
+    (eq current active)))
+
 (defcustom punch-line-left-separator "  "
   "Separator used between sections in the mode-line."
   :type 'string
@@ -75,7 +86,7 @@ to use for the separator."
             (concat divider str))))
     str))
 
-(defun punch--line-format-left ()
+(defun punch-line-format-left ()
   "Create the left section of the mode-line with caching."
   (list (concat
          (punch-macro-info)
@@ -104,30 +115,44 @@ to use for the separator."
    (punch-battery-info)
    (punch-time-info)))
 
-(defun punch-mode-line-inactive-format ()
+(defun punch-line-format-inactive ()
   "Inactive format with Evil status and buffer name in gray."
   (propertize (concat " " (punch-buffer-name)) 'face 'punch-line-inactive-face))
 
+;; (defun punch-line-format ()
+;;   "Generate the mode-line format with improved caching."
+;;   (if punch-line-is-active
+;;       (list (punch-line-format-left)
+;;             (punch-line-get-fill)
+;;             (punch-line-format-right))
+;;     (punch-mode-line-inactive-format)))
+
 (defun punch-line-format ()
-  "Generate the mode-line format with improved caching."
-  (if punch-line-is-active
-      (list (punch--line-format-left)
+  "Generate the mode-line format."
+  (if (punch-line-window-active-p)
+      (list (punch-line-format-left)
             (punch-line-get-fill)
             (punch-line-format-right))
-    (punch-mode-line-inactive-format)))
+    (punch-line-format-inactive)))
+
+;; (defun punch-line-update (&optional _)
+;;   "Update mode-line for all windows."
+;;   (let ((active-window (selected-window)))
+;;     (walk-windows
+;;      (lambda (window)
+;;        (with-current-buffer (window-buffer window)
+;;          (let ((was-active punch-line-is-active)
+;;                (is-active (eq window active-window)))
+;;            (when (not (eq was-active is-active))
+;;              (setq-local punch-line-is-active is-active)
+;;              (force-mode-line-update)))))
+;;      'no-minibuf t)))
 
 (defun punch-line-update (&optional _)
   "Update mode-line for all windows."
-  (let ((active-window (selected-window)))
-    (walk-windows
-     (lambda (window)
-       (with-current-buffer (window-buffer window)
-         (let ((was-active punch-line-is-active)
-               (is-active (eq window active-window)))
-           (when (not (eq was-active is-active))
-             (setq-local punch-line-is-active is-active)
-             (force-mode-line-update)))))
-     'no-minibuf t)))
+  (let ((prev-active punch-line-active-window))
+    (setq punch-line-active-window (selected-window))
+    (force-mode-line-update t)))
 
 (defun punch-line-set-mode-line ()
   "Set the mode-line format for punch-line."
