@@ -2,7 +2,7 @@
 
 ;; Author: Mikael Konradsson
 ;; Version: 1.0
-;; Package-Requires: ((emacs "25.1") (nerd-icons "0.0.1"))
+;; Package-Requires: ((emacs "28.1") (nerd-icons "0.0.1"))
 
 ;;; Commentary:
 ;; This package provides a weather component for a customized mode-line in Emacs.

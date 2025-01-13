@@ -2,7 +2,7 @@
 
 ;; Author: Mikael Konradsson
 ;; Version: 1.1
-;; Package-Requires: ((emacs "25.1") (evil "1.0.0"))
+;; Package-Requires: ((emacs "28.1"))
 
 ;;; Commentary:
 ;; This package offers a customized mode-line for Emacs with task list management,

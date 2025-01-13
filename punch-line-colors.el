@@ -1,8 +1,8 @@
-;;; punch-line-colors.el --- A customized mode-line for Emacs with Evil status and advanced customizations -*- lexical-binding: t; -*-
+;;; punch-line-colors.el --- A customized mode-line for Emacs with modal status and advanced customizations -*- lexical-binding: t; -*-
 
 ;; Author: Mikael Konradsson
 ;; Version: 1.0
-;; Package-Requires: ((emacs "25.1") (evil "1.0.0"))
+;; Package-Requires: ((emacs "28.1"))
 
 ;;; Commentary:
 

@@ -2,11 +2,11 @@
 
 ;; Author: Mikael Konradsson
 ;; Version: 1.0
-;; Package-Requires: ((emacs "25.1") (evil "1.0.0"))
+;; Package-Requires: ((emacs "28.1"))
 
 ;;; Commentary:
-;; This package offers a customized mode-line for Emacs with Evil status,
-;; configurable colors, and the ability to customize displayed information.
+;; This package offers a customized mode-line for Emacs.
+;; Configurable colors, and the ability to customize displayed information.
 
 ;;; Code:
 (require 'cl-lib)

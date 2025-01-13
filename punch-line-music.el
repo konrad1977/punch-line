@@ -1,7 +1,7 @@
 ;;; punch-line-music.el --- Customized mode-line with music info -*- lexical-binding: t; -*-
 ;; Author: Mikael Konradsson
 ;; Version: 2.0
-;; Package-Requires: ((emacs "25.1"))
+;; Package-Requires: ((emacs "28.1"))
 
 ;;; Commentary:
 ;; This package provides a customized mode-line component for displaying music information.
