@@ -92,18 +92,22 @@
     (let* ((count (flycheck-count-errors flycheck-current-errors))
            (info (or (cdr (assq 'info count)) 0))
            (warning (or (cdr (assq 'warning count)) 0))
-           (error (or (cdr (assq 'error count)) 0)))
-      (concat
-       (when (> info 0)
-         (propertize (format "%s %d " (nerd-icons-codicon "nf-cod-lightbulb") info)
-                     'face '(:inherit success)))
-       (when (> warning 0)
-         (propertize (format "%s %d " (nerd-icons-codicon "nf-cod-warning") warning)
-                     'face '(:inherit warning)))
-       (when (> error 0)
-         (propertize (format "%s %d" (nerd-icons-codicon "nf-cod-error") error)
-                     'face '(:inherit error)))))))
-
+           (error (or (cdr (assq 'error count)) 0))
+           (info-str (when (> info 0)
+                      (propertize (format "%s %d" (nerd-icons-codicon "nf-cod-lightbulb") info)
+                                'face '(:inherit success))))
+           (warning-str (when (> warning 0)
+                         (propertize (format "%s %d" (nerd-icons-codicon "nf-cod-warning") warning)
+                                   'face '(:inherit warning))))
+           (error-str (when (> error 0)
+                       (propertize (format "%s %d" (nerd-icons-codicon "nf-cod-error") error)
+                                 'face '(:inherit error)))))
+      (string-join
+       (remove nil
+               (list info-str
+                     warning-str
+                     error-str))
+       " "))))
 
 (defun punch-flycheck-info ()
   "Return flycheck information, updating the cache if necessary."

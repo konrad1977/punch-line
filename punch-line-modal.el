@@ -1,11 +1,12 @@
-;;; punch-line-modal.el --- A customized mode-line for Emacs with Evil status and advanced customizations -*- lexical-binding: t; -*-
+;;; punch-line-modal.el --- A customized mode-line for Emacs with optional Evil/Meow status -*- lexical-binding: t; -*-
 
 ;; Author: Mikael Konradsson
 ;; Version: 1.0
-;; Package-Requires: ((emacs "25.1") (evil "1.0.0"))
+;; Package-Requires: ((emacs "25.1") (nerd-icons "1.0") (punch-line-colors "1.0"))
 
 ;;; Commentary:
-
+;; This package provides mode-line customization with optional support for Evil and Meow modes.
+;; If Evil or Meow are installed, their states will be displayed in the mode-line.
 
 ;;; Code:
 
@@ -15,8 +16,8 @@
 (defvar punch-line-height 1
   "Height of the mode-line.")
 
-(defcustom punch-line-show-evil-modes t
-  "Show Evil and Meow modes in the mode-line."
+(defcustom punch-line-show-modal-section t
+  "Show Evil and Meow modes in the mode-line when available."
   :type 'boolean
   :group 'punch-line)
 
@@ -74,25 +75,36 @@
     ('circle "nf-ple-left_half_circle_thick")
     (_ "nf-pl-left_hard_divider")))
 
-
 (defcustom punch-evil-faces
   '((normal . punch-line-evil-normal-face)
     (insert . punch-line-evil-insert-face)
     (visual . punch-line-evil-visual-face)
     (replace . punch-line-evil-replace-face)
-    (motion . punch-line-meow-motion-face)  ;; Meow motion face
-    (keypad . punch-line-meow-keypad-face)  ;; Meow keypad face
-    (insert-exit . punch-line-meow-insert-exit-face)) ;; Meow insert exit face
+    (motion . punch-line-meow-motion-face)
+    (keypad . punch-line-meow-keypad-face)
+    (insert-exit . punch-line-meow-insert-exit-face))
   "Faces for different Evil and Meow states."
   :type '(alist :key-type symbol :value-type face)
   :group 'punch-line)
 
+(defun punch-line-evil-available-p ()
+  "Return t if Evil mode is available and enabled."
+  (and (featurep 'evil)
+       (bound-and-true-p evil-local-mode)
+       (boundp 'evil-state)))
+
+(defun punch-line-meow-available-p ()
+  "Return t if Meow mode is available and enabled."
+  (and (featurep 'meow)
+       (bound-and-true-p meow-mode)
+       (boundp 'meow-state)))
+
 (defun punch-evil-status-inactive ()
   "Show Evil/Meow status with gray face for inactive mode-line."
-  (when punch-line-show-evil-modes
-    (let* ((state (cond ((and (bound-and-true-p evil-local-mode) (boundp 'evil-state)) evil-state)
-                        ((and (bound-and-true-p meow-mode) (boundp 'meow-state)) meow-state)
-     (t 'emacs)))
+  (when punch-line-show-modal-section
+    (let* ((state (cond ((punch-line-evil-available-p) evil-state)
+                        ((punch-line-meow-available-p) meow-state)
+                        (t 'emacs)))
            (state-name (upcase (symbol-name state))))
       (propertize (format " %s " state-name)
                   'face 'punch-line-inactive-face))))
@@ -106,15 +118,15 @@
                    (nerd-icons-powerline icon :v-adjust v-adjust)
                  "")
                'face `(:foreground ,background-face
-                       :height ,icon-height))))
+                      :height ,icon-height))))
         divider)
     (propertize " " 'face `(:foreground ,background-face))))
 
 (defun punch-evil-status ()
   "Show Evil/Meow status with custom face and correct vertical alignment."
-  (if punch-line-show-evil-modes
-      (let* ((state (cond ((and (bound-and-true-p evil-local-mode) (boundp 'evil-state)) evil-state)
-                         ((and (bound-and-true-p meow-mode) (boundp 'meow-state)) meow-state)
+  (if punch-line-show-modal-section
+      (let* ((state (cond ((punch-line-evil-available-p) evil-state)
+                         ((punch-line-meow-available-p) meow-state)
                          (t 'emacs)))
              (state-face (or (cdr (assq state punch-evil-faces))
                            'punch-line-evil-emacs-face))
@@ -122,54 +134,52 @@
              (background-face (face-background state-face nil t))
              (height-adjust (/ (punch-line-modal-height) 2))
              (divider (punch-evil-divider
-                       :icon (punch-line-get-divider-icon)
-                       :icon-height (punch-line-get-divider-icon-height)
-                       :background-face background-face
-                       :v-adjust (* (/ (punch-line-modal-height) 102.0 2.0) -1.0)))
-             )
+                      :icon (punch-line-get-divider-icon)
+                      :icon-height (punch-line-get-divider-icon-height)
+                      :background-face background-face
+                      :v-adjust (* (/ (punch-line-modal-height) 102.0 2.0) -1.0))))
         (concat
          (propertize ""
-                     'face `(:inherit ,state-face
-                                      :box (:line-width ,height-adjust :color ,background-face)
-                                      :height ,(punch-line-get-divider-icon-height)))
+                    'face `(:inherit ,state-face
+                           :box (:line-width ,height-adjust :color ,background-face)
+                           :height ,(punch-line-get-divider-icon-height)))
          (propertize (format " %s " state-name)
-                     'face `(:inherit ,state-face
-                            :box (:line-width ,height-adjust :color ,background-face)))
+                    'face `(:inherit ,state-face
+                           :box (:line-width ,height-adjust :color ,background-face)))
          divider
          " "))
     (propertize " " 'face 'punch-line-evil-normal-face)))
 
 (defun punch-evil-mc-info ()
-  "Show Evil MC information."
-  (require 'evil-mc-vars)
-  (let ((cursor-count (evil-mc-get-cursor-count))
-        (icon (nerd-icons-octicon "nf-oct-pencil")))
-    (if (> cursor-count 1)
-        (propertize (format " %s %d " icon cursor-count) 'face '(:inherit punch-line-evil-replace-face))
-      "")))
+  "Show Evil MC information if available."
+  (when (featurep 'evil-mc-vars)
+    (let ((cursor-count (evil-mc-get-cursor-count))
+          (icon (nerd-icons-octicon "nf-oct-pencil")))
+      (if (> cursor-count 1)
+          (propertize (format " %s %d " icon cursor-count)
+                     'face '(:inherit punch-line-evil-replace-face))
+        ""))))
 
 (defun punch-time-info ()
   "Show time with background matching the current evil state."
-  (let* ((state (cond ((and (bound-and-true-p evil-local-mode) (boundp 'evil-state)) evil-state)
-                      ((and (bound-and-true-p meow-mode) (boundp 'meow-state)) meow-state)
+  (let* ((state (cond ((punch-line-evil-available-p) evil-state)
+                      ((punch-line-meow-available-p) meow-state)
                       (t 'emacs)))
          (state-face (or (cdr (assq state punch-evil-faces))
                         'punch-line-evil-emacs-face))
          (background-color (face-background state-face nil t))
          (height-adjust (/ (punch-line-modal-height) 2))
          (divider (punch-evil-divider
-                   :icon (punch-line-get-right-side-divider-icon)
-                   :icon-height (punch-line-get-divider-icon-height)
-                   :background-face background-color
-                   :v-adjust (* (/ (punch-line-modal-height) 102.0 2.0) -1.0)
-                   )))
+                  :icon (punch-line-get-right-side-divider-icon)
+                  :icon-height (punch-line-get-divider-icon-height)
+                  :background-face background-color
+                  :v-adjust (* (/ (punch-line-modal-height) 102.0 2.0) -1.0))))
     (concat
      " "
      divider
      (propertize (format-time-string " %H:%M  ")
-                 'face `(:inherit ,state-face
-                                  :background ,background-color))
-     )))
+                'face `(:inherit ,state-face
+                       :background ,background-color)))))
 
 (provide 'punch-line-modal)
 ;;; punch-line-modal.el ends here

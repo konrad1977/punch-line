@@ -43,7 +43,7 @@ A modern, feature-rich mode line for Emacs
 
 | Feature Toggle                    | Default | Description                                    |
 |----------------------------------|---------|------------------------------------------------|
-| `punch-line-show-evil-modes`     | t       | Show Evil/Meow mode states                     |
+| `punch-line-show-modal-section`  | t       | Show Evil/Meow mode states                     |
 | `punch-line-modal-use-fancy-icon`| t       | Use fancy icons for modal states               |
 | `punch-show-git-info`            | t       | Display Git branch and status                  |
 | `punch-show-project-info`        | t       | Show current project information               |
