@@ -119,7 +119,7 @@
         (concat
          (propertize punch-weather-icon 'help-echo punch-weather-description)
          " "
-         (propertize punch-weather-temperature 'face 'mode-line
+         (propertize punch-weather-temperature 'face 'font-lock-constant-face
                      'help-echo punch-weather-description))
       "Loading...")))
 

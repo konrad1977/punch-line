@@ -30,6 +30,23 @@
   "Customizations for punch-line."
   :group 'mode-line)
 
+(defvar punch-line--update-timer nil
+  "Timer for debouncing mode-line updates.")
+
+(defvar-local punch-line--cached-left nil
+  "Cache for the left section of the mode-line.")
+
+(defvar-local punch-line--cached-right nil
+  "Cache for the right section of the mode-line.")
+
+(defvar punch-line--last-update 0
+  "Timestamp of last mode-line update.")
+
+(defcustom punch-line-min-update-interval 0.1
+  "Minimum interval between mode-line updates in seconds."
+  :type 'number
+  :group 'punch-line)
+
 (defvar punch-line-is-active nil)
 
 (defvar-local punch-line--cached-fill nil
@@ -125,11 +142,24 @@ to use for the separator."
             (punch-line-format-right))
     (punch-line-format-inactive)))
 
-(defun punch-line-update (&optional _)
-  "Update mode-line for all windows."
-  (let ((prev-active punch-line-active-window))
-    (setq punch-line-active-window (selected-window))
-    (force-mode-line-update t)))
+(defun punch-line-update (&optional force)
+  "Update mode-line for all windows.
+If FORCE is non-nil, bypass the update interval check."
+  (let ((current-time (float-time)))
+    (when (or force
+              (> (- current-time punch-line--last-update)
+                 punch-line-min-update-interval))
+      (when punch-line--update-timer
+        (cancel-timer punch-line--update-timer))
+      (setq punch-line--update-timer
+            (run-with-idle-timer 
+             0.05 nil
+             (lambda ()
+               (setq punch-line--last-update current-time
+                     punch-line-active-window (selected-window)
+                     punch-line--cached-left nil
+                     punch-line--cached-right nil)
+               (force-mode-line-update t)))))))
 
 (defun punch-line-set-mode-line ()
   "Set the mode-line format for punch-line."

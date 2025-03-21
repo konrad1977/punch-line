@@ -122,32 +122,43 @@
         divider)
     (propertize " " 'face `(:foreground ,background-face))))
 
+(defvar-local punch-line--modal-cache nil
+  "Cache for modal status.")
+
+(defvar-local punch-line--modal-cache-state nil
+  "Cached modal state.")
+
 (defun punch-evil-status ()
   "Show Evil/Meow status with custom face and correct vertical alignment."
   (if punch-line-show-modal-section
-      (let* ((state (cond ((punch-line-evil-available-p) evil-state)
-                         ((punch-line-meow-available-p) meow-state)
-                         (t 'emacs)))
-             (state-face (or (cdr (assq state punch-evil-faces))
-                           'punch-line-evil-emacs-face))
-             (state-name (upcase (symbol-name state)))
-             (background-face (face-background state-face nil t))
-             (height-adjust (/ (punch-line-modal-height) 2))
-             (divider (punch-evil-divider
-                      :icon (punch-line-get-divider-icon)
-                      :icon-height (punch-line-get-divider-icon-height)
-                      :background-face background-face
-                      :v-adjust (* (/ (punch-line-modal-height) 102.0 2.0) -1.0))))
-        (concat
-         (propertize ""
-                    'face `(:inherit ,state-face
-                           :box (:line-width ,height-adjust :color ,background-face)
-                           :height ,(punch-line-get-divider-icon-height)))
-         (propertize (format " %s " state-name)
-                    'face `(:inherit ,state-face
-                           :box (:line-width ,height-adjust :color ,background-face)))
-         divider
-         " "))
+      (let* ((current-state (cond ((punch-line-evil-available-p) evil-state)
+                                 ((punch-line-meow-available-p) meow-state)
+                                 (t 'emacs))))
+        (if (and punch-line--modal-cache
+                 (eq current-state punch-line--modal-cache-state))
+            punch-line--modal-cache
+          (let* ((state-face (or (cdr (assq current-state punch-evil-faces))
+                                'punch-line-evil-emacs-face))
+                 (state-name (upcase (symbol-name current-state)))
+                 (background-face (face-background state-face nil t))
+                 (height-adjust (/ (punch-line-modal-height) 2))
+                 (divider (punch-evil-divider
+                          :icon (punch-line-get-divider-icon)
+                          :icon-height (punch-line-get-divider-icon-height)
+                          :background-face background-face
+                          :v-adjust (* (/ (punch-line-modal-height) 102.0 2.0) -1.0))))
+            (setq punch-line--modal-cache-state current-state
+                  punch-line--modal-cache
+                  (concat
+                   (propertize ""
+                              'face `(:inherit ,state-face
+                                     :box (:line-width ,height-adjust :color ,background-face)
+                                     :height ,(punch-line-get-divider-icon-height)))
+                   (propertize (format " %s " state-name)
+                              'face `(:inherit ,state-face
+                                     :box (:line-width ,height-adjust :color ,background-face)))
+                   divider
+                   " ")))))
     (propertize " " 'face 'punch-line-evil-normal-face)))
 
 (defun punch-evil-mc-info ()
@@ -177,7 +188,7 @@
     (concat
      " "
      divider
-     (propertize (format-time-string " %H:%M  ")
+     (propertize (format-time-string " %H:%M   ")
                 'face `(:inherit ,state-face
                        :background ,background-color)))))
 

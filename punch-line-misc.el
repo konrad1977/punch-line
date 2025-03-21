@@ -1,8 +1,8 @@
-;;; punch-line-misc.el --- A customized mode-line for Emacs with modal, status and advanced customization's -*- lexical-binding: t; -*-
+;;; punch-line-misc.el --- A customized mode-line for Emacs -*- lexical-binding: t; -*-
 
 ;; Author: Mikael Konradsson
 ;; Version: 1.0
-;; Package-Requires: ((emacs "28.1"))
+;; Package-Requires: ((emacs "29.1"))
 
 ;;; Commentary:
 ;; This package offers a customized mode-line for Emacs with modal status,
@@ -111,12 +111,14 @@
 
 (defun punch-flycheck-info ()
   "Return flycheck information, updating the cache if necessary."
-  (let ((current-time (float-time)))
-    (when (or (null punch-flycheck-cache)
-	      (> (- current-time punch-flycheck-cache-time) punch-flycheck-cache-interval))
-      (setq punch-flycheck-cache-time current-time)
-      (setq punch-flycheck-cache (punch-flycheck-create-cache)))
-      punch-flycheck-cache))
+  (when punch-show-flycheck-info
+    (let ((current-time (float-time)))
+      (when (or (null punch-flycheck-cache)
+                (> (- current-time (or punch-flycheck-cache-time 0))
+                   punch-flycheck-cache-interval))
+        (setq punch-flycheck-cache-time current-time
+              punch-flycheck-cache (punch-flycheck-create-cache)))
+      punch-flycheck-cache)))
 
 
 (defun punch-process-info ()
@@ -212,7 +214,6 @@
   "HUD for Copilot."
   (when (and punch-show-copilot-info (bound-and-true-p copilot-mode))
     (propertize " " 'face '(:inherit success))))
-
 
 (provide 'punch-line-misc)
 ;;; punch-line-misc.el ends here

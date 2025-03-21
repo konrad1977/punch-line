@@ -1,4 +1,4 @@
-;;; punch-line-colors.el --- A customized mode-line for Emacs with modal status and advanced customizations -*- lexical-binding: t; -*-
+;;; punch-line-colors.el --- Colors for punch-line mode-line -*- lexical-binding: t; -*-
 
 ;; Author: Mikael Konradsson
 ;; Version: 1.0
@@ -8,29 +8,84 @@
 
 ;;; Code:
 
+(require 'cl-lib)
+
+(cl-defun adjust-colors (base-face &key background-adjust foreground-adjust
+                                       background-color foreground-color
+                                       weight slant underline overline strike-through
+                                       box inverse-video stipple)
+  "Generate a face specification based on BASE-FACE with adjustments.
+Adjusts background by BACKGROUND-ADJUST percent (-100 to 100).
+Adjusts foreground by FOREGROUND-ADJUST percent (-100 to 100).
+Can set specific BACKGROUND-COLOR and/or FOREGROUND-COLOR.
+Additional face attributes (WEIGHT, SLANT, etc.) can be specified."
+  (let* ((base-face-attrs (face-all-attributes base-face nil))
+         (bg (or background-color
+                 (and background-adjust
+                      (adjust-color (or (face-background base-face nil t) "unspecified")
+                                   background-adjust))
+                 (face-background base-face nil t)))
+         (fg (or foreground-color
+                 (and foreground-adjust
+                      (adjust-color (or (face-foreground base-face nil t) "unspecified")
+                                   foreground-adjust))
+                 (face-foreground base-face nil t)))
+         (spec `(,@base-face-attrs
+                 ,@(when bg `(:background ,bg))
+                 ,@(when fg `(:foreground ,fg))
+                 ,@(when weight `(:weight ,weight))
+                 ,@(when slant `(:slant ,slant))
+                 ,@(when underline `(:underline ,underline))
+                 ,@(when overline `(:overline ,overline))
+                 ,@(when strike-through `(:strike-through ,strike-through))
+                 ,@(when box `(:box ,box))
+                 ,@(when inverse-video `(:inverse-video ,inverse-video))
+                 ,@(when stipple `(:stipple ,stipple)))))
+    spec))
+
+(defun adjust-color (color percent)
+  "Adjust COLOR by PERCENT (-100 to 100)."
+  (if (string= color "unspecified")
+      color
+    (let* ((rgb (color-name-to-rgb color))
+           (adjusted-rgb (mapcar (lambda (comp)
+                                  (if (> percent 0)
+                                      (min 1.0 (+ comp (* (- 1.0 comp) (/ percent 100.0))))
+                                      (max 0.0 (+ comp (* comp (/ percent 100.0))))))
+                                rgb)))
+      (apply 'color-rgb-to-hex adjusted-rgb))))
+
 ;;; Evil faces
 (defface punch-line-evil-normal-face
-  `((t :foreground "#FFFFFF" :background "#2D4F67" :weight bold))
-  "Face for Evil normal state."
+  `((t ,@(adjust-colors 'default
+          :background-color (face-foreground 'font-lock-function-name-face)
+          :weight 'bold)))
+  "Face for evil normal state."
   :group 'punch-line)
 
 (defface punch-line-evil-insert-face
-  `((t :foreground "#333333" :background "#E6C384" :weight bold))
+  `((t ,@(adjust-colors 'default
+          :background-color (face-foreground 'font-lock-type-face)
+          :weight 'bold)))
   "Face for Evil insert state."
   :group 'punch-line)
 
 (defface punch-line-evil-visual-face
-  `((t :foreground "#333333" :background "#D27E99" :weight bold))
+  `((t ,@(adjust-colors 'default
+          :background-color (face-foreground 'region)
+          :weight 'bold)))
   "Face for Evil visual state."
   :group 'punch-line)
 
 (defface punch-line-evil-replace-face
-  `((t :foreground "#333333" :background "#FF5D62" :weight bold))
+  `((t ,@(adjust-colors 'default
+          :background-color (face-foreground 'font-lock-constant-face)
+          :weight 'bold)))
   "Face for Evil replace state."
   :group 'punch-line)
 
 (defface punch-line-evil-emacs-face
-  `((t :foreground "#333333" :background "#B0C4DE" :weight bold))
+  `((t :inherit punch-line-evil-normal-face))
   "Face for Emacs state."
   :group 'punch-line)
 
@@ -161,52 +216,6 @@
   :group 'punch-line)
 
 
-(require 'cl-lib)
-
-(cl-defun adjust-colors (base-face &key background-adjust foreground-adjust
-                                        background-color foreground-color
-                                        weight slant underline overline strike-through
-                                        box inverse-video stipple)
-  "Generate a face specification based on BASE-FACE with adjustments.
-Adjusts background by BACKGROUND-ADJUST percent (-100 to 100).
-Adjusts foreground by FOREGROUND-ADJUST percent (-100 to 100).
-Can set specific BACKGROUND-COLOR and/or FOREGROUND-COLOR.
-Additional face attributes (WEIGHT, SLANT, etc.) can be specified."
-  (let* ((base-face-attrs (face-all-attributes base-face nil))
-         (bg (or background-color
-                 (and background-adjust
-                      (adjust-color (or (face-background base-face nil t) "unspecified")
-                                    background-adjust))
-                 (face-background base-face nil t)))
-         (fg (or foreground-color
-                 (and foreground-adjust
-                      (adjust-color (or (face-foreground base-face nil t) "unspecified")
-                                    foreground-adjust))
-                 (face-foreground base-face nil t)))
-         (spec `(,@base-face-attrs
-                 ,@(when bg `(:background ,bg))
-                 ,@(when fg `(:foreground ,fg))
-                 ,@(when weight `(:weight ,weight))
-                 ,@(when slant `(:slant ,slant))
-                 ,@(when underline `(:underline ,underline))
-                 ,@(when overline `(:overline ,overline))
-                 ,@(when strike-through `(:strike-through ,strike-through))
-                 ,@(when box `(:box ,box))
-                 ,@(when inverse-video `(:inverse-video ,inverse-video))
-                 ,@(when stipple `(:stipple ,stipple)))))
-    spec))
-
-(defun adjust-color (color percent)
-  "Adjust COLOR by PERCENT (-100 to 100)."
-  (if (string= color "unspecified")
-      color
-    (let* ((rgb (color-name-to-rgb color))
-           (adjusted-rgb (mapcar (lambda (comp)
-                                   (if (> percent 0)
-                                       (min 1.0 (+ comp (* (- 1.0 comp) (/ percent 100.0))))
-                                       (max 0.0 (+ comp (* comp (/ percent 100.0))))))
-                                 rgb)))
-      (apply 'color-rgb-to-hex adjusted-rgb))))
 
 (provide 'punch-line-colors)
 ;;; punch-line-colors.el ends here
