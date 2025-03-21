@@ -78,7 +78,7 @@
   "Get the background color of the mode-line-inactive face."
   (face-background 'mode-line-inactive nil t))
 
-(defun punch-update-inactive-face ()
+(defun punch-line-update-inactive-face ()
   "Update the punch-line-inactive-face with the current mode-line-inactive background color."
   (let ((bg-color (punch-line-inactive-bg)))
     (set-face-attribute 'punch-line-inactive-face nil
@@ -152,7 +152,7 @@ If FORCE is non-nil, bypass the update interval check."
       (when punch-line--update-timer
         (cancel-timer punch-line--update-timer))
       (setq punch-line--update-timer
-            (run-with-idle-timer 
+            (run-with-idle-timer
              0.05 nil
              (lambda ()
                (setq punch-line--last-update current-time
@@ -174,7 +174,7 @@ If FORCE is non-nil, bypass the update interval check."
   (add-hook 'window-buffer-change-functions #'punch-line-update)  ; Add this hook
   (add-hook 'window-state-change-hook #'punch-line-update)
   (add-hook 'window-size-change-functions (lambda (_) (punch-line-invalidate-fill-cache)))
-  (add-hook 'after-load-theme-hook #'punch-update-inactive-face))
+  (add-hook 'after-load-theme-hook #'punch-line-update-inactive-face))
 
 (defun punch-line-remove-hooks ()
   "Remove hooks to update the mode-line."
@@ -185,7 +185,7 @@ If FORCE is non-nil, bypass the update interval check."
   (remove-hook 'window-buffer-change-functions #'punch-line-update)  ; Remove this hook
   (remove-hook 'window-state-change-hook #'punch-line-update)
   (remove-hook 'window-size-change-functions (lambda (_) (punch-line-invalidate-fill-cache)))
-  (remove-hook 'after-load-theme-hook #'punch-update-inactive-face))
+  (remove-hook 'after-load-theme-hook #'punch-line-update-inactive-face))
 
 (define-minor-mode punch-line-mode
   "Activate Punch Line mode."
@@ -196,7 +196,7 @@ If FORCE is non-nil, bypass the update interval check."
       (progn
         (punch-line-set-mode-line)
         (punch-line-register-hooks)
-        (punch-update-inactive-face)
+        (punch-line-update-inactive-face)
         (punch-line-update))
     (setq-default mode-line-format (default-value 'mode-line-format))
     (punch-line-remove-hooks)
