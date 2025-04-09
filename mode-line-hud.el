@@ -35,6 +35,11 @@
   :group 'mode-line-hud
   :type '(boolean))
 
+(defcustom mode-line-hud-notification-debug nil
+  "When non-nil, show notification metadata in echo area."
+  :group 'mode-line-hud
+  :type 'boolean)
+
 (defun mode-line-hud--get-caller-context ()
   "Get detailed information about the calling context."
   (let ((i 1)

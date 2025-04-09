@@ -10,7 +10,7 @@
 
 (require 'cl-lib)
 
-(cl-defun adjust-colors (base-face &key background-adjust foreground-adjust
+(cl-defun punch-line-colors-adjust-colors (base-face &key background-adjust foreground-adjust
                                        background-color foreground-color
                                        weight slant underline overline strike-through
                                        box inverse-video stipple)
@@ -57,28 +57,28 @@ Additional face attributes (WEIGHT, SLANT, etc.) can be specified."
 
 ;;; Evil faces
 (defface punch-line-evil-normal-face
-  `((t ,@(adjust-colors 'default
+  `((t ,@(punch-line-colors-adjust-colors 'default
           :background-color (face-foreground 'font-lock-function-name-face)
           :weight 'bold)))
   "Face for evil normal state."
   :group 'punch-line)
 
 (defface punch-line-evil-insert-face
-  `((t ,@(adjust-colors 'default
+  `((t ,@(punch-line-colors-adjust-colors 'default
           :background-color (face-foreground 'font-lock-type-face)
           :weight 'bold)))
   "Face for Evil insert state."
   :group 'punch-line)
 
 (defface punch-line-evil-visual-face
-  `((t ,@(adjust-colors 'default
+  `((t ,@(punch-line-colors-adjust-colors 'default
           :background-color (face-foreground 'region)
           :weight 'bold)))
   "Face for Evil visual state."
   :group 'punch-line)
 
 (defface punch-line-evil-replace-face
-  `((t ,@(adjust-colors 'default
+  `((t ,@(punch-line-colors-adjust-colors 'default
           :background-color (face-foreground 'font-lock-constant-face)
           :weight 'bold)))
   "Face for Evil replace state."
@@ -214,8 +214,6 @@ Additional face attributes (WEIGHT, SLANT, etc.) can be specified."
   '((t (:foreground "#1db954")))
   "Face for spotify mode-line elements."
   :group 'punch-line)
-
-
 
 (provide 'punch-line-colors)
 ;;; punch-line-colors.el ends here

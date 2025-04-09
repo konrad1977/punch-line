@@ -171,6 +171,18 @@
                      'face '(:inherit punch-line-evil-replace-face))
         ""))))
 
+(defun punch-iedit-info ()
+  "Show iedit information if available."
+  (when (featurep 'iedit)
+    (let ((occurrence-count (or (and (boundp 'iedit-occurrences-overlays)
+                                     (length iedit-occurrences-overlays))
+                                0))
+          (icon (nerd-icons-octicon "nf-oct-pencil")))
+      (if (> occurrence-count 0)
+          (propertize (format " %s %d " icon occurrence-count)
+                      'face '(:inherit punch-line-evil-replace-face))
+        ""))))
+
 (defun punch-time-info ()
   "Show time with background matching the current evil state."
   (let* ((state (cond ((punch-line-evil-available-p) evil-state)

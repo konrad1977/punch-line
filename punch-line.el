@@ -1,8 +1,9 @@
-;;; punch-line.el --- A customized mode-line for Emacs with Evil status and advanced customizations -*- lexical-binding: t; -*-
+;;; punch-line.el --- A customizeable mode-line with Evil  -*- lexical-binding: t; -*-
 
 ;; Author: Mikael Konradsson
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "28.1"))
+;; URL: https://github.com/konrad1977/punch-line
 
 ;;; Commentary:
 ;; This package offers a customized mode-line for Emacs.
@@ -38,6 +39,9 @@
 
 (defvar-local punch-line--cached-right nil
   "Cache for the right section of the mode-line.")
+
+(defvar-local punch-line--cached-right-str nil
+  "Cached string for the right section of the mode-line.")
 
 (defvar punch-line--last-update 0
   "Timestamp of last mode-line update.")
@@ -79,10 +83,14 @@
   (face-background 'mode-line-inactive nil t))
 
 (defun punch-line-update-inactive-face ()
-  "Update the punch-line-inactive-face with the current mode-line-inactive background color."
-  (let ((bg-color (punch-line-inactive-bg)))
+  "Update the punch-line-inactive-face with the current theme colors."
+  (let* ((bg-color (face-background 'mode-line-inactive nil t))
+         (fg-color (face-foreground 'mode-line-inactive nil t)))
     (set-face-attribute 'punch-line-inactive-face nil
-                        :box `(:line-width ,(punch-line-modal-height) :color ,bg-color))))
+                        :background bg-color
+                        :foreground fg-color  
+                        :box `(:line-width ,(punch-line-modal-height) :color ,bg-color)
+                        :underline nil)))
 
 (cl-defun punch-line-add-separator (&key str separator leftside (last nil) (face 'punch-line-separator-face))
   "Add a (SEPARATOR) around STR based on the arguments.
@@ -105,6 +113,7 @@ to use for the separator."
   "Create the left section of the mode-line with caching."
   (list (concat
          (punch-macro-info)
+         (punch-iedit-info)
          (punch-evil-mc-info)
          (punch-evil-status)
          (punch-buffer-name)
@@ -112,8 +121,8 @@ to use for the separator."
          (punch-line-add-separator :str (punch-project-info) :separator punch-line-left-separator)
          (punch-line-add-separator :str (punch-flycheck-info) :separator punch-line-left-separator)
          (punch-line-add-separator :str (punch-what-am-i-doing-info) :separator punch-line-left-separator)
-         (punch-line-add-separator :str (mode-line-segment-hud) :separator punch-line-left-separator)
-         (punch-process-info))))
+         (punch-process-info)
+         (mode-line-segment-hud))))
 
 (defun punch-line-format-right ()
   "Create the right section of the mode-line with caching."
@@ -223,7 +232,8 @@ If FORCE is non-nil, bypass the update interval check."
 (defun punch-line-invalidate-fill-cache ()
   "Invalidate the fill cache."
   (setq punch-line--cached-fill nil
-        punch-line--cached-right-width nil))
+        punch-line--cached-right-width nil
+        punch-line--cached-right-str nil))
 
 ;; Add this to your cache invalidation logic
 (defun punch-line-invalidate-caches ()

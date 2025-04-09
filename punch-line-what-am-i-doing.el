@@ -48,8 +48,7 @@
               (setq punch-line-task-list (read (current-buffer)))
               (setq punch-line-current-task-index
                     (min (max 0 punch-line-current-task-index)
-                         (max 0 (1- (length punch-line-task-list))))))
-            (message "Loaded %d tasks" (length punch-line-task-list)))
+                         (max 0 (1- (length punch-line-task-list)))))))
         (error
          (message "Error loading tasks: %s" (error-message-string err))
          (setq punch-line-task-list nil

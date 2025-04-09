@@ -114,10 +114,17 @@
   (when punch-show-flycheck-info
     (let ((current-time (float-time)))
       (when (or (null punch-flycheck-cache)
-                (> (- current-time (or punch-flycheck-cache-time 0))
+                (null punch-flycheck-cache-time)
+                (> (- current-time punch-flycheck-cache-time)
                    punch-flycheck-cache-interval))
         (setq punch-flycheck-cache-time current-time
-              punch-flycheck-cache (punch-flycheck-create-cache)))
+              punch-flycheck-cache (punch-flycheck-create-cache))
+      ;; Force refresh if cache is empty but should have data
+      (when (and (null punch-flycheck-cache)
+                 (bound-and-true-p flycheck-mode)
+                 (or flycheck-current-errors
+                     (eq 'running flycheck-last-status-change)))
+        (setq punch-flycheck-cache (punch-flycheck-create-cache))))
       punch-flycheck-cache)))
 
 
