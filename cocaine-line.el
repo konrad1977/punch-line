@@ -1,4 +1,4 @@
-;;; cocaine-line.el --- A customized modeline for Emacs with Evil status and advanced customizations
+;;; cocaine-line.el --- A customized modeline for Emacs with Evil status and advanced customizations -*- lexical-binding: t; -*-
 
 ;; Author: Mikael Konradsson
 ;; Version: 1.0
@@ -19,6 +19,20 @@
 (require 'vc)
 (require 'doom-modeline)
 
+;; Import all new modular components
+(require 'cocaine-line-vc)
+(require 'cocaine-line-macro)
+(require 'cocaine-line-music)
+(require 'cocaine-line-modal)
+(require 'cocaine-line-battery)
+(require 'cocaine-line-misc)
+(require 'cocaine-line-weather)
+(require 'cocaine-line-term)
+(require 'cocaine-line-systemmonitor)
+(require 'cocaine-line-package)
+(require 'cocaine-line-what-am-i-doing)
+(require 'cocaine-line-spinner)
+
 (unless (bound-and-true-p battery-status-function)
   (battery-update-handler))
 
@@ -29,6 +43,7 @@
   "Customizations for cocaine-line."
   :group 'mode-line)
 
+;; Configuration options (preserved from original)
 (defcustom cocaine-right-padding 0
   "Number of spaces to add after the time."
   :type 'integer
@@ -74,6 +89,7 @@
   :type 'boolean
   :group 'cocaine-line)
 
+;; Preserve original cocaine-line faces and color customizations
 (defface cocaine-line-buffer-name-face
   '((t :foreground "#a0a0ae" :weight bold))
   "Face for buffer name."
@@ -109,7 +125,7 @@
   "Standard face for project information."
   :group 'cocaine-line)
 
-;; Git faces customization
+;; Git faces customization (preserved)
 (defcustom cocaine-git-faces
   '((edited . cocaine-line-git-edited-face)
     (added . cocaine-line-git-added-face)
@@ -140,7 +156,7 @@
   "Face for Git conflicts."
   :group 'cocaine-line)
 
-;; Evil mode faces customization
+;; Evil mode faces customization (preserved)
 (defcustom cocaine-evil-faces
   '((normal . cocaine-line-evil-normal-face)
     (insert . cocaine-line-evil-insert-face)
@@ -181,8 +197,113 @@
   "Face for Emacs state."
   :group 'cocaine-line)
 
+(defface cocaine-line-separator-face
+  '((t :foreground "#54536D" :weight bold :height 0.8))
+  "Face for the separator between sections in cocaine-line."
+  :group 'cocaine-line)
+
+;; Additional faces for new features (minimal styling to match existing)
+(defface cocaine-line-inactive-face
+  '((t :inherit mode-line-inactive))
+  "Face for inactive mode-line elements."
+  :group 'cocaine-line)
+
+(defface cocaine-line-what-am-i-doing-face
+  '((t :inherit mode-line-emphasis))
+  "Face for the what-am-i-doing functionality."
+  :group 'cocaine-line)
+
+(defface cocaine-line-what-am-i-doing-count-face
+  '((t :inherit success))
+  "Face for displaying current task in mode line."
+  :group 'cocaine-line)
+
+(defface cocaine-line-system-monitor-cpu-face
+  '((t :inherit font-lock-constant-face))
+  "Face for CPU usage in system monitor."
+  :group 'cocaine-line)
+
+(defface cocaine-line-system-monitor-memory-face
+  '((t :inherit font-lock-function-call-face))
+  "Face for memory usage in system monitor."
+  :group 'cocaine-line)
+
+(defface cocaine-line-music-face
+  '((t (:inherit font-lock-comment-face)))
+  "Face for music information."
+  :group 'cocaine-line)
+
+(defface cocaine-line-music-apple-face
+  '((t (:foreground "#ff2d55")))
+  "Face for apple music information."
+  :group 'cocaine-line)
+
+(defface cocaine-line-music-spotify-face
+  '((t (:foreground "#1db954")))
+  "Face for spotify music information."
+  :group 'cocaine-line)
+
+(defface cocaine-line-macro-face
+  '((t :foreground "#333333" :background "#B0C4DE" :weight bold))
+  "Face for macro recording state."
+  :group 'cocaine-line)
+
+(defface cocaine-line-macro-recording-face
+  '((t :foreground "#222233" :background "#FF5D62" :weight bold))
+  "Face for macro recording state."
+  :group 'cocaine-line)
+
+;; Caching and update system from punch-line
+(defvar cocaine-line--update-timer nil
+  "Timer for debouncing mode-line updates.")
+
+(defvar-local cocaine-line--cached-left nil
+  "Cache for the left section of the mode-line.")
+
+(defvar-local cocaine-line--cached-right nil
+  "Cache for the right section of the mode-line.")
+
+(defvar-local cocaine-line--cached-right-str nil
+  "Cached string for the right section of the mode-line.")
+
+(defvar cocaine-line--last-update 0
+  "Timestamp of last mode-line update.")
+
+(defcustom cocaine-line-min-update-interval 0.1
+  "Minimum interval between mode-line updates in seconds."
+  :type 'number
+  :group 'cocaine-line)
+
+(defvar cocaine-line-is-active nil)
+
+(defvar-local cocaine-line--cached-fill nil
+  "Cached fill for the mode-line.")
+
+(defvar-local cocaine-line--cached-right-width nil
+  "Cached width of the right section of the mode-line.")
+
+(defvar cocaine-line-active-window nil
+  "Stores the currently active window.")
+
+(defun cocaine-line-window-active-p ()
+  "Return non-nil if the current window is active."
+  (let ((current (get-buffer-window))
+        (active cocaine-line-active-window))
+    (eq current active)))
+
+;; Preserved separator configurations
 (defcustom cocaine-line-separator " | "
   "Separator used between sections in the modeline."
+  :type 'string
+  :group 'cocaine-line)
+
+(defcustom cocaine-line-left-separator "  "
+  "Separator used between sections in the mode-line."
+  :type 'string
+  :group 'cocaine-line)
+
+(defcustom cocaine-line-right-separator "  "
+  "Separator used between sections in the mode-line."
   :type 'string
   :group 'cocaine-line)
 
@@ -191,44 +312,39 @@
   :type 'face
   :group 'cocaine-line)
 
-(defface cocaine-line-separator-face
-  '((t :foreground "#54536D" :weight bold :height 0.8))
-  "Face for the separator between sections in cocaine-line."
-  :group 'cocaine-line)
+(defun cocaine-line-inactive-bg ()
+  "Get the background color of the mode-line-inactive face."
+  (face-background 'mode-line-inactive nil t))
 
+(defun cocaine-line-update-inactive-face ()
+  "Update the cocaine-line-inactive-face with the current theme colors."
+  (let* ((bg-color (face-background 'mode-line-inactive nil t))
+         (fg-color (face-foreground 'mode-line-inactive nil t)))
+    (set-face-attribute 'cocaine-line-inactive-face nil
+                        :background bg-color
+                        :foreground fg-color  
+                        :box `(:line-width ,(cocaine-line-modal-height) :color ,bg-color)
+                        :underline nil)))
+
+;; Enhanced separator function with improved styling
 (cl-defun cocaine-add-separator (&key str separator leftside (last nil)
                                       (face 'cocaine-line-separator-face))
   "Add a separator after STR if it is not empty or last.
     LAST indicates if this is the last element.
     FACE specifies which face to use for the separator."
   (if (and str (not (string-empty-p str)) (not last))
-      (if leftside
-          (progn
-            (if separator
-                (concat str (propertize separator 'face face))
-              (concat str (propertize cocaine-line-separator 'face face))))
-        (progn
-          (if separator
-              (concat (propertize separator 'face face) str)
-            (concat (propertize cocaine-line-separator 'face face) str))))
-
+      (if (not separator)
+          str
+        (let* ((height (cocaine-line-get-divider-icon-height))
+               (divider (propertize separator
+                                  'face `(:inherit ,face
+                                         :height ,height))))
+          (if leftside
+              (concat str divider)
+            (concat divider str))))
     str))
 
-;; Evil status function
-(defun cocaine-evil-status ()
-  "Show Evil status with custom face and correct vertical alignment."
-  (let* ((evil-state (if (and (bound-and-true-p evil-local-mode)
-                              (boundp 'evil-state))
-                         evil-state
-                       'emacs))
-         (state-face (or (cdr (assq evil-state cocaine-evil-faces))
-                         'cocaine-line-evil-emacs-face))
-         (state-name (if (eq evil-state 'emacs)
-                         "EMACS"
-                       (upcase (symbol-name evil-state)))))
-    (propertize (format " %s " state-name)
-                'face state-face)))
-
+;; Preserved custom functions from original cocaine-line
 (defun cocaine-flycheck-mode-line ()
   "Custom flycheck modeline with icons and counts."
   (when (and (bound-and-true-p flycheck-mode)
@@ -249,25 +365,6 @@
          (propertize (format " %s %d" (nerd-icons-codicon "nf-cod-error") error)
                      'face '(:inherit error)))))))
 
-(defun cocaine-process-info ()
-  "Show information about active processes."
-  (when cocaine-show-processes-info
-   (let ((process-info (format-mode-line mode-line-process)))
-     (unless (string-blank-p process-info)
-       (string-trim process-info)))))
-
-(defun cocaine-misc-info ()
-  "Show information about misc info."
-  (when cocaine-show-misc-info
-    (let ((misc-info (format-mode-line mode-line-misc-info)))
-      (unless (string-blank-p misc-info)
-        (string-trim misc-info)))))
-
-(defun cocaine-vc--rev (file backend)
-  "Get the revision for FILE in BACKEND."
-  (when-let ((rev (vc-working-revision file backend)))
-    (substring rev 0 (min (length rev) 7))))
-
 (defun cocaine-eglot-info ()
   "Return a string representing the current Eglot status for the mode line using nerd-icons."
   (if (bound-and-true-p eglot--managed-mode)
@@ -279,23 +376,6 @@
             (concat (propertize (or nick "") 'face 'cocaine-line-project-face) " " icon " ")
           icon))
     (cocaine-project-info)))
-
-(defun cocaine-git-info ()
-  "Show Git branch and status with custom faces."
-  (when (and cocaine-show-git-info
-             (buffer-file-name)
-             (vc-git-registered (buffer-file-name)))
-    (let* ((branch (vc-git-mode-line-string (buffer-file-name)))
-           (state (vc-state (buffer-file-name)))
-           (state-face (alist-get state cocaine-git-faces
-                                  (alist-get 'default cocaine-git-faces)))
-           (status-indicator (if (eq state 'up-to-date) "" "")))
-      (when branch
-        (propertize (format "%s %s%s"
-                            (nerd-icons-octicon "nf-oct-git_branch")
-                            (replace-regexp-in-string "^Git[:-]" "" branch)
-                            status-indicator)
-                    'face state-face)))))
 
 (defun cocaine-project-name ()
   "Get the project name if any."
@@ -321,70 +401,7 @@
   "Face used for the \\='unsaved\\=' symbol in the mode-line."
   :group 'doom-modeline-faces)
 
-;; Custom functions for left section
-(defun cocaine-buffer-name ()
-  "Show buffer name with custom face and icon (if available)."
-  (let* ((file-name (buffer-file-name))
-         (icon (when (and cocaine-show-use-nerd-icons file-name)
-                 (nerd-icons-icon-for-file file-name t)))
-         (buffer-name (file-name-sans-extension
-                       (substring-no-properties (format-mode-line "%b "))))
-         (face (if (buffer-modified-p)
-                   'cocaine-modeline-buffer-modified
-                 'doom-modeline-buffer-file)))
-    (if icon
-        (concat icon " " (propertize buffer-name 'face face))
-      (propertize buffer-name 'face 'doom-modeline-buffer-file))))
-
-(defun cocaine-major-mode ()
-  "Show major mode with custom face."
-  (propertize (substring-no-properties (format-mode-line mode-name))
-              'face 'doom-modeline-buffer-file))
-
-(defun cocaine-line-col ()
-  "Show line and column with custom face."
-  (when cocaine-show-column-info
-    (propertize "[%l:%c]" 'face 'cocaine-line-position-face)))
-
-(defun cocaine-buffer-position ()
-  "Show buffer position percentage with custom face."
-  (when cocaine-show-buffer-position
-    (propertize "%p%" 'face 'cocaine-line-position-face)))
-
-(defun cocaine-copilot-info ()
-  "HUD for Copilot."
-  (when (bound-and-true-p copilot-mode)
-    (propertize " " 'face '(:inherit success))))
-
-(defun cocaine-line-spacer ()
-  "Show an empty string."
-  (propertize " "))
-
-(defun cocaine-time ()
-  "Show time with custom face."
-  (propertize (format-time-string "%H:%M") 'face 'doom-modeline-time))
-
-(defun cocaine-battery-info ()
-  "Show battery percentage or charging status using text and nerd-font icons on macOS."
-  (when (and cocaine-show-battery-info
-             (bound-and-true-p display-battery-mode))
-    (let* ((battery-plist (funcall battery-status-function))
-           (percentage (string-to-number (battery-format "%p" battery-plist)))
-           (status (battery-format "%B" battery-plist))
-           (charging (string= status "AC"))
-           (icon (cond
-                  (charging (nerd-icons-faicon "nf-fa-plug"))
-                  ((>= percentage 87.5) (nerd-icons-faicon "nf-fa-battery"))
-                  ((>= percentage 62.5) (nerd-icons-faicon "nf-fa-battery_3"))
-                  ((>= percentage 37.5) (nerd-icons-faicon "nf-fa-battery_2"))
-                  ((>= percentage 12.5) (nerd-icons-faicon "nf-fa-battery_1"))
-                  (t (nerd-icons-faicon "nf-fa-battery_0")))))
-      (if (and percentage status)
-          (format "%s"
-                  icon
-                  (if charging " (Charging)" ""))
-        "No battery info"))))
-
+;; Preserved doom modeline bar function
 (defsubst salih/doom-modeline--bar ()
   "The default bar regulates the height of the mode-line in GUI."
   (unless (and doom-modeline--bar-active doom-modeline--bar-inactive)
@@ -400,91 +417,144 @@
       doom-modeline--bar-active
     doom-modeline--bar-inactive))
 
-(defun cocaine-left-section ()
-  "Create the left section of the modeline."
-  (let ((left-section
-         (list
-          (concat
-           (salih/doom-modeline--bar) ;; just to adjust height.
-           ;; (propertize " "
-           ;;                   'display '(raise 0.3)
-           ;;                   'face 'mode-line)
+;; Enhanced format functions with new features
+(defun cocaine-line-format-left ()
+  "Create the left section of the mode-line with caching."
+  (list (concat
+         (salih/doom-modeline--bar) ;; preserved doom modeline height adjustment
+         (cocaine-add-separator :str
+                                (doom-modeline-segment--modals)
+                                :leftside t
+                                :separator "| ")
+         (cocaine-add-separator :str (cocaine-macro-info) :separator cocaine-line-left-separator)
+         (cocaine-add-separator :str (cocaine-iedit-info) :separator cocaine-line-left-separator)
+         (cocaine-add-separator :str (cocaine-evil-mc-info) :separator cocaine-line-left-separator)
+         (cocaine-add-separator :str (cocaine-evil-status) :separator cocaine-line-left-separator)
+         (cocaine-add-separator :str (cocaine-buffer-name) :separator "|")
+         (cocaine-add-separator :str (cocaine-major-mode) :separator " | ")
+         (cocaine-add-separator :str (cocaine-project-info) :separator cocaine-line-left-separator)
+         (cocaine-add-separator :str (cocaine-flycheck-info) :separator cocaine-line-left-separator)
+         (cocaine-add-separator :str (cocaine-what-am-i-doing-info) :separator cocaine-line-left-separator)
+         (cocaine-add-separator :str (mode-line-segment-hud))
+         (cocaine-add-separator :str (cocaine-process-info)))))
 
-           (cocaine-add-separator :str
-                                  (doom-modeline-segment--modals)
-                                  :leftside t
-                                  :separator "| ")
-           (cocaine-line-spacer)
-           (cocaine-buffer-name)
-           (cocaine-add-separator :str
-                                  (cocaine-major-mode)
-                                  :separator " | ")
-           (cocaine-add-separator
-            :str
-            (if (derived-mode-p
-                 'pdf-view-mode)
-                (concat " " (salih/doom-modeline-update-pdf-pages-only-percent))
-              (substring (format-mode-line (doom-modeline-segment--buffer-position)) 1)))
+(defun cocaine-line-format-right ()
+  "Create the right section of the mode-line with caching."
+  (concat
+   ;; preserved doom modeline segments
+   (if (derived-mode-p 'pdf-view-mode)
+       (cocaine-add-separator
+        :str (propertize (salih/doom-modeline-update-pdf-pages-no-percent)) :leftside t)
+     "")
+   ;; new features from punch-line
+   (cocaine-add-separator :str (cocaine-line-music-info) :separator cocaine-line-right-separator :leftside t)
+   (cocaine-add-separator :str (cocaine-system-monitor-info) :separator cocaine-line-right-separator :leftside t)
+   (cocaine-add-separator :str (cocaine-line-col) :separator cocaine-line-right-separator :leftside t)
+   (cocaine-add-separator :str (cocaine-buffer-position) :separator cocaine-line-right-separator :leftside t)
+   (cocaine-add-separator :str (cocaine-copilot-info) :separator cocaine-line-right-separator :leftside t)
+   (cocaine-add-separator :str (cocaine-term-info) :separator cocaine-line-right-separator :leftside t)
+   (cocaine-add-separator :str (cocaine-misc-info) :separator cocaine-line-right-separator :leftside t)
+   (cocaine-add-separator :str (cocaine-git-info) :separator cocaine-line-right-separator :leftside t)
+   (cocaine-add-separator :str (cocaine-weather-info) :separator cocaine-line-right-separator :leftside t)
+   ;; preserved doom modeline segments
+   (cocaine-add-separator :str (doom-modeline-segment--salih/selection-info) :leftside t)
+   (cocaine-add-separator :str (doom-modeline-segment--matches) :leftside t)
+   (cocaine-add-separator :str (doom-modeline-segment--irc) :leftside t)
+   (cocaine-add-separator :str (and (boundp 'mu4e-alert-mode-line) (or mu4e-alert-mode-line ""))  :leftside t)
+   (cocaine-add-separator :str (doom-modeline-segment--lsp) :leftside t)
+   (cocaine-add-separator :str (doom-modeline-segment--minor-modes) :leftside t)
+   (cocaine-add-separator :str (cocaine-flycheck-mode-line) :leftside t)
+   (cocaine-add-separator :str (doom-modeline-segment--vcs) :leftside t)
+   (cocaine-battery-info)
+   (cocaine-time-info)))
 
-           (cocaine-add-separator :str (mode-line-segment-hud))
-           (cocaine-add-separator :str (cocaine-process-info))))))
+(defun cocaine-line-format-inactive ()
+  "Inactive format with Evil status and buffer name in gray."
+  (propertize (concat " " (cocaine-buffer-name)) 'face 'cocaine-line-inactive-face))
 
+(defun cocaine-line-format ()
+  "Generate the mode-line format."
+  (if (cocaine-line-window-active-p)
+      (list (cocaine-line-format-left)
+            (cocaine-line-get-fill)
+            (cocaine-line-format-right))
+    (cocaine-line-format-inactive)))
 
-    left-section))
-(defun cocaine-right-section ()
-  "Create the right section of the modeline."
-  (let ((right-section (concat
-                        (if (derived-mode-p 'pdf-view-mode)
-                            (cocaine-add-separator
-                             :str (propertize (salih/doom-modeline-update-pdf-pages-no-percent)) :leftside t)
-                            "")
-                        ;; (cocaine-add-separator :str (doom-modeline-segment--salih/word-count) :leftside t)
-                        (cocaine-add-separator :str (doom-modeline-segment--salih/selection-info) :leftside t)
-                        (cocaine-add-separator :str (doom-modeline-segment--matches) :leftside t)
-                        (cocaine-add-separator :str (doom-modeline-segment--irc) :leftside t)
-                        (cocaine-add-separator :str (and (boundp 'mu4e-alert-mode-line) (or mu4e-alert-mode-line ""))  :leftside t)
-                        (cocaine-add-separator :str (doom-modeline-segment--lsp) :leftside t)
-                        (cocaine-add-separator :str (doom-modeline-segment--minor-modes) :leftside t)
-                        (cocaine-add-separator :str (cocaine-flycheck-mode-line) :leftside t)
-                        (cocaine-add-separator :str (doom-modeline-segment--vcs) :leftside t)
-                        (cocaine-time)
-                        (cocaine-add-separator :str awqat-mode-line-string :leftside nil))))
+;; Enhanced update system from punch-line
+(defun cocaine-line-update (&optional force)
+  "Update mode-line for all windows.
+If FORCE is non-nil, bypass the update interval check."
+  (let ((current-time (float-time)))
+    (when (or force
+              (> (- current-time cocaine-line--last-update)
+                 cocaine-line-min-update-interval))
+      (when cocaine-line--update-timer
+        (cancel-timer cocaine-line--update-timer))
+      (setq cocaine-line--update-timer
+            (run-with-idle-timer
+             0.05 nil
+             (lambda ()
+               (setq cocaine-line--last-update current-time
+                     cocaine-line-active-window (selected-window)
+                     cocaine-line--cached-left nil
+                     cocaine-line--cached-right nil)
+               (force-mode-line-update t)))))))
 
+(defun cocaine-line-set-mode-line ()
+  "Set the mode-line format for cocaine-line."
+  (setq-default mode-line-format '(:eval (cocaine-line-format))))
 
-    (list (propertize " " 'display `((space :align-to (- right ,(string-width right-section)))))
-          right-section)))
+;; Enhanced fill calculation with caching
+(defun cocaine-line-calculate-fill (right-section)
+  "Calculate the fill space needed to right-align the RIGHT-SECTION."
+  (let ((right-width (string-width (or right-section ""))))
+    (setq cocaine-line--cached-right-width right-width)
+    (propertize " " 'display
+                `((space :align-to (- right ,(- right-width 1)))))))
 
-(defun cocaine-mode-line-format ()
-  "Generate the format for cocaine-line modeline."
-  (let ((left (cocaine-left-section))
-        (right (cocaine-right-section)))
-    (append left right)))
+(defun cocaine-line-get-fill ()
+  "Get the fill space needed to right-align content with caching."
+  (let* ((right-section (cocaine-line-format-right))
+         (current-width (string-width (or right-section ""))))
+    (if (and cocaine-line--cached-fill
+             cocaine-line--cached-right-width
+             (= current-width cocaine-line--cached-right-width))
+        cocaine-line--cached-fill
+      (setq cocaine-line--cached-fill
+            (cocaine-line-calculate-fill right-section)))))
 
-(defun cocaine-update-mode-line (&optional _)
-  "Update modeline for all windows."
-  (force-mode-line-update t))
+(defun cocaine-line-invalidate-fill-cache ()
+  "Invalidate the fill cache."
+  (setq cocaine-line--cached-fill nil
+        cocaine-line--cached-right-width nil
+        cocaine-line--cached-right-str nil))
 
-(defun cocaine-set-mode-line ()
-  "Set the modeline format for cocaine-line."
-  (setq-default mode-line-format '(:eval (cocaine-mode-line-format))))
+(defun cocaine-line-invalidate-caches ()
+  "Invalidate all caches."
+  (cocaine-line-invalidate-fill-cache))
 
-(defun cocaine-register-hooks ()
-  "Register hooks to update the modeline."
-  (add-hook 'post-command-hook #'cocaine-update-mode-line)
-  (add-hook 'window-configuration-change-hook #'cocaine-update-mode-line)
-  (add-hook 'focus-in-hook #'cocaine-update-mode-line)
-  (add-hook 'focus-out-hook #'cocaine-update-mode-line)
-  (add-hook 'window-state-change-hook #'cocaine-update-mode-line)  ; Add this hook
-  (add-hook 'after-load-theme-hook #'cocaine-update-mode-line))
+;; Enhanced hook management
+(defun cocaine-line-register-hooks ()
+  "Register hooks to update the mode-line."
+  (add-hook 'post-command-hook #'cocaine-line-update)
+  (add-hook 'window-configuration-change-hook #'cocaine-line-update)
+  (add-hook 'focus-in-hook #'cocaine-line-update)
+  (add-hook 'focus-out-hook #'cocaine-line-update)
+  (add-hook 'window-buffer-change-functions #'cocaine-line-update)
+  (add-hook 'window-state-change-hook #'cocaine-line-update)
+  (add-hook 'window-size-change-functions (lambda (_) (cocaine-line-invalidate-fill-cache)))
+  (add-hook 'after-load-theme-hook #'cocaine-line-update-inactive-face))
 
-(defun cocaine-remove-hooks ()
-  "Remove hooks to update the modeline."
-  (remove-hook 'post-command-hook #'cocaine-update-mode-line)
-  (remove-hook 'window-configuration-change-hook #'cocaine-update-mode-line)
-  (remove-hook 'focus-in-hook #'cocaine-update-mode-line)
-  (remove-hook 'focus-out-hook #'cocaine-update-mode-line)
-  (remove-hook 'window-state-change-hook #'cocaine-update-mode-line)  ; Remove this hook
-  (remove-hook 'after-load-theme-hook #'cocaine-update-mode-line))
+(defun cocaine-line-remove-hooks ()
+  "Remove hooks to update the mode-line."
+  (remove-hook 'post-command-hook #'cocaine-line-update)
+  (remove-hook 'window-configuration-change-hook #'cocaine-line-update)
+  (remove-hook 'focus-in-hook #'cocaine-line-update)
+  (remove-hook 'focus-out-hook #'cocaine-line-update)
+  (remove-hook 'window-buffer-change-functions #'cocaine-line-update)
+  (remove-hook 'window-state-change-hook #'cocaine-line-update)
+  (remove-hook 'window-size-change-functions (lambda (_) (cocaine-line-invalidate-fill-cache)))
+  (remove-hook 'after-load-theme-hook #'cocaine-line-update-inactive-face))
 
 (define-minor-mode cocaine-line-mode
   "Activate Cocaine Line mode."
@@ -493,14 +563,13 @@
   :lighter nil
   (if cocaine-line-mode
       (progn
-        (cocaine-set-mode-line)
-        (cocaine-register-hooks)
-        (cocaine-update-mode-line))
+        (cocaine-line-set-mode-line)
+        (cocaine-line-register-hooks)
+        (cocaine-line-update-inactive-face)
+        (cocaine-line-update))
     (setq-default mode-line-format (default-value 'mode-line-format))
-    (cocaine-remove-hooks)
+    (cocaine-line-remove-hooks)
     (force-mode-line-update t)))
-
-
 
 (provide 'cocaine-line)
 ;;; cocaine-line.el ends here
