@@ -96,12 +96,39 @@ M-x punch-line-what-am-i-doing-previous-task # Switch to previous task
 (setq punch-line-modal-size 'small)  ; Options: 'small, 'medium, 'large
 
 ;; Divider style
-(setq punch-line-modal-divider-style 'circle)  ; Options: 'arrow, 'flame, 'ice, 'circle
+(setq punch-line-modal-divider-style 'circle)  ; Options: 'arrow, 'flame, 'ice, 'circle, 'block
 
 ;; Separators
 (setq punch-line-left-separator "  ")
 (setq punch-line-right-separator "  ")
 ```
+
+### Section Backgrounds
+
+Customize background colors for individual mode-line sections:
+
+```elisp
+;; Manual colors for specific sections
+(setq punch-line-section-backgrounds
+      '((filename . "#201010")
+        (battery . "#000000")
+        (git . "#1a1a2e")
+        (major-mode . "#16213e")))
+
+;; Automatic tinting - each section gets progressively lighter
+(setq punch-line-section-backgrounds 'auto)
+(setq punch-line-section-background-tint-step 5)  ; 5% lighter each section
+
+;; Automatic with darker progression
+(setq punch-line-section-backgrounds 'auto)
+(setq punch-line-section-background-tint-step -5)  ; 5% darker each section
+```
+
+Available sections:
+- **Left side:** `filename`, `major-mode`, `project`, `flycheck`, `what-am-i-doing`, `process`
+- **Right side:** `music`, `system-monitor`, `column`, `position`, `copilot`, `term`, `misc`, `git`, `weather`, `battery`
+
+Note: Evil/Meow status and time sections maintain their own styling and are excluded from section backgrounds.
 
 <p align="left">
     Arrow
@@ -126,6 +153,10 @@ M-x punch-line-what-am-i-doing-previous-task # Switch to previous task
 <p align="left">
     None
   <img src="https://github.com/konrad1977/punch-line/blob/master/screenshots/modal_none.png" alt="None"/>
+</p>
+
+<p align="left">
+    Block - Wraps modal and time in a solid block background with padding on all sides
 </p>
 
 
