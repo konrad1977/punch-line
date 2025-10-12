@@ -28,6 +28,16 @@
   "Customization group for punch-line."
   :group 'convenience)
 
+(defcustom punch-show-buffer-name t
+  "If set to t, show buffer name in the mode line."
+  :type 'boolean
+  :group 'punch-line)
+
+(defcustom punch-show-major-mode t
+  "If set to t, show major mode in the mode line."
+  :type 'boolean
+  :group 'punch-line)
+
 (defcustom punch-show-processes-info t
   "If set to t, show active processes."
   :type 'boolean

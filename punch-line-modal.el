@@ -2,7 +2,7 @@
 
 ;; Author: Mikael Konradsson
 ;; Version: 1.0
-;; Package-Requires: ((emacs "28.1") (nerd-icons "1.0") (punch-line-colors "1.0"))
+;; Package-Requires: ((emacs "28.1") (nerd-icons "1.0"))
 
 ;;; Commentary:
 ;; This package provides mode-line customization with optional support for Evil and Meow modes.
@@ -21,8 +21,19 @@
   :type 'boolean
   :group 'punch-line)
 
+(defvar-local punch-line--modal-cache nil
+  "Cache for modal status.")
+
+(defvar-local punch-line--modal-cache-state nil
+  "Cached modal state.")
+
 (defcustom punch-line-modal-use-fancy-icon t
   "Use fancy icons for Evil and Meow modes."
+  :type 'boolean
+  :group 'punch-line)
+
+(defcustom punch-line-modal-use-padding t
+  "Use padding around the modal state."
   :type 'boolean
   :group 'punch-line)
 
@@ -34,13 +45,15 @@
           (const :tag "Large" large))
   :group 'punch-line)
 
-(defcustom punch-line-modal-divider-style 'circle
+(defcustom punch-line-modal-divider-style 'block
   "Style of the divider icon."
   :type '(choice
           (const :tag "Arrow" arrow)
+          (const :tag "None" none)
           (const :tag "Flame" flame)
           (const :tag "Ice" ice)
-          (const :tag "Circle" circle))
+          (const :tag "Circle" circle)
+          (const :tag "Block" block))
   :group 'punch-line)
 
 (defun punch-line-get-divider-icon-height ()
@@ -48,14 +61,14 @@
   (pcase punch-line-modal-size
     ('small 1.0)
     ('medium 1.14)
-    ('large 1.7)))
+    ('large 1.0)))
 
 (defun punch-line-modal-height ()
   "Height of the mode-line based on size."
   (pcase punch-line-modal-size
     ('small 1)
-    ('medium 4)
-    ('large 12)))
+    ('medium 5)
+    ('large 20)))
 
 (defun punch-line-get-divider-icon ()
   "Get the nerd-font icon name based on divider style."
@@ -64,6 +77,8 @@
     ('flame "nf-ple-flame_thick")
     ('ice "nf-ple-ice_waveform")
     ('circle "nf-ple-right_half_circle_thick")
+    ('block nil)
+    ('none nil)
     (_ "nf-pl-left_hard_divider")))
 
 (defun punch-line-get-right-side-divider-icon ()
@@ -73,7 +88,9 @@
     ('flame "nf-ple-flame_thick_mirrored")
     ('ice "nf-ple-ice_waveform_mirrored")
     ('circle "nf-ple-left_half_circle_thick")
-    (_ "nf-pl-left_hard_divider")))
+    ('block nil)
+    ('none nil)
+    (_ "nf-pl-right_hard_divider")))
 
 (defcustom punch-evil-faces
   '((normal . punch-line-evil-normal-face)
@@ -111,16 +128,19 @@
 
 (cl-defun punch-evil-divider (&key icon icon-height background-face v-adjust)
   "Create a divider for the mode-line."
-  (if punch-line-modal-use-fancy-icon
+  (if (and punch-line-modal-use-fancy-icon icon)
       (let* ((divider
               (propertize
-               (if (fboundp 'nerd-icons-powerline)
+               (if (and (fboundp 'nerd-icons-powerline) icon)
                    (nerd-icons-powerline icon :v-adjust v-adjust)
                  "")
                'face `(:foreground ,background-face
                       :height ,icon-height))))
         divider)
-    (propertize " " 'face `(:foreground ,background-face))))
+    ;; Check if section backgrounds are enabled - if so, return empty string instead of space
+    (if (bound-and-true-p punch-line-section-backgrounds)
+        ""
+      (propertize " " 'face `(:foreground ,background-face)))))
 
 (defvar-local punch-line--modal-cache nil
   "Cache for modal status.")
@@ -132,33 +152,33 @@
   "Show Evil/Meow status with custom face and correct vertical alignment."
   (if punch-line-show-modal-section
       (let* ((current-state (cond ((punch-line-evil-available-p) evil-state)
-                                 ((punch-line-meow-available-p) meow-state)
-                                 (t 'emacs))))
+                                  ((punch-line-meow-available-p) meow-state)
+                                  (t 'emacs))))
         (if (and punch-line--modal-cache
                  (eq current-state punch-line--modal-cache-state))
             punch-line--modal-cache
           (let* ((state-face (or (cdr (assq current-state punch-evil-faces))
-                                'punch-line-evil-emacs-face))
+                                 'punch-line-evil-emacs-face))
                  (state-name (upcase (symbol-name current-state)))
                  (background-face (face-background state-face nil t))
                  (height-adjust (/ (punch-line-modal-height) 2))
                  (divider (punch-evil-divider
-                          :icon (punch-line-get-divider-icon)
-                          :icon-height (punch-line-get-divider-icon-height)
-                          :background-face background-face
-                          :v-adjust (* (/ (punch-line-modal-height) 102.0 2.0) -1.0))))
+                           :icon (punch-line-get-divider-icon)
+                           :icon-height (punch-line-get-divider-icon-height)
+                           :background-face background-face
+                           :v-adjust (* (/ (punch-line-modal-height) 102.0 2.0) -1.0))))
             (setq punch-line--modal-cache-state current-state
                   punch-line--modal-cache
                   (concat
                    (propertize ""
-                              'face `(:inherit ,state-face
-                                     :box (:line-width ,height-adjust :color ,background-face)
-                                     :height ,(punch-line-get-divider-icon-height)))
+                               'face `(:inherit ,state-face
+                                                :box (:line-width ,height-adjust :color ,background-face)
+                                                :height ,(punch-line-get-divider-icon-height)))
                    (propertize (format " %s " state-name)
-                              'face `(:inherit ,state-face
-                                     :box (:line-width ,height-adjust :color ,background-face)))
+                               'face `(:inherit ,state-face
+                                                :box (:line-width ,height-adjust :color ,background-face)))
                    divider
-                   " ")))))
+                   "")))))
     (propertize " " 'face 'punch-line-evil-normal-face)))
 
 (defun punch-evil-mc-info ()
@@ -168,7 +188,7 @@
           (icon (nerd-icons-octicon "nf-oct-pencil")))
       (if (> cursor-count 1)
           (propertize (format " %s %d " icon cursor-count)
-                     'face '(:inherit punch-line-evil-replace-face))
+                      'face '(:inherit punch-line-evil-replace-face))
         ""))))
 
 (defun punch-iedit-info ()
@@ -189,20 +209,21 @@
                       ((punch-line-meow-available-p) meow-state)
                       (t 'emacs)))
          (state-face (or (cdr (assq state punch-evil-faces))
-                        'punch-line-evil-emacs-face))
+                         'punch-line-evil-emacs-face))
          (background-color (face-background state-face nil t))
          (height-adjust (/ (punch-line-modal-height) 2))
          (divider (punch-evil-divider
-                  :icon (punch-line-get-right-side-divider-icon)
-                  :icon-height (punch-line-get-divider-icon-height)
-                  :background-face background-color
-                  :v-adjust (* (/ (punch-line-modal-height) 102.0 2.0) -1.0))))
+                   :icon (punch-line-get-right-side-divider-icon)
+                   :icon-height (punch-line-get-divider-icon-height)
+                   :background-face background-color
+                   :v-adjust (* (/ (punch-line-modal-height) 102.0 2.0) -1.0))))
     (concat
-     " "
+     ;; Reduce spacing when section backgrounds are enabled
+     (if (bound-and-true-p punch-line-section-backgrounds) "" " ")
      divider
-     (propertize (format-time-string " %H:%M   ")
-                'face `(:inherit ,state-face
-                       :background ,background-color)))))
+     (propertize (format-time-string " %H:%M ")
+                 'face `(:inherit ,state-face
+                                  :background ,background-color)))))
 
 (provide 'punch-line-modal)
 ;;; punch-line-modal.el ends here
