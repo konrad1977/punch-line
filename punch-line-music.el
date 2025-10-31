@@ -1,6 +1,6 @@
 ;;; punch-line-music.el --- Customized mode-line with music info -*- lexical-binding: t; -*-
 ;; Author: Mikael Konradsson
-;; Version: 2.0
+;; Version: 2.1
 ;; Package-Requires: ((emacs "28.1"))
 
 ;;; Commentary:
@@ -105,29 +105,40 @@ end tell" app-name app-name)))
                            buffer-name
                            "osascript"
                            "-e" (punch-line-music-info-command service))))
-        ;; Set process timeout
+        ;; Set process timeout with proper closure
         (run-with-timer punch-line-process-timeout nil
-                       (lambda ()
-                         (when (and process (eq (process-status process) 'run))
-                           (punch-line-cleanup-stale-process))))
+                       (lambda (proc)
+                         (when (and proc
+                                    (processp proc)
+                                    (process-live-p proc)
+                                    (eq (process-status proc) 'run))
+                           (delete-process proc)
+                           (let ((buf (process-buffer proc)))
+                             (when (and buf (buffer-live-p buf))
+                               (kill-buffer buf)))))
+                       process)
         (set-process-sentinel
          process
          (lambda (proc event)
            (when (string= event "finished\n")
-             (let ((output (with-current-buffer (process-buffer proc)
-                            (buffer-string))))
-               (setq punch-music-info-cache
-                     (if (string-empty-p (string-trim output))
-                         ""
-                       (if (> punch-line-music-max-length 0)
-                           (concat " " (punch-line-icon) " "
-                                   (propertize (punch-line-trim-music-info output)
-                                             'face 'punch-line-music-face))
-                         (concat (punch-line-icon) " "))))
-               (force-mode-line-update t)))
+             ;; Check buffer is alive before trying to read from it
+             (let ((proc-buffer (process-buffer proc)))
+               (when (and proc-buffer (buffer-live-p proc-buffer))
+                 (with-current-buffer proc-buffer
+                   (let ((output (buffer-string)))
+                     (setq punch-music-info-cache
+                           (if (string-empty-p (string-trim output))
+                               ""
+                             (if (> punch-line-music-max-length 0)
+                                 (concat " " (punch-line-icon) " "
+                                         (propertize (punch-line-trim-music-info output)
+                                                   'face 'punch-line-music-face))
+                               (concat (punch-line-icon) " "))))
+                     (force-mode-line-update t))))))
            ;; Clean up process buffer
-           (when (buffer-live-p (process-buffer proc))
-             (kill-buffer (process-buffer proc)))))))))
+           (let ((proc-buffer (process-buffer proc)))
+             (when (and proc-buffer (buffer-live-p proc-buffer))
+               (kill-buffer proc-buffer)))))))))
 
 (defun punch-line-trim-music-info (info)
   "Trim the music INFO to a maximum length."

@@ -189,6 +189,40 @@ Note: Evil/Meow status and time sections maintain their own styling and are excl
       punch-flycheck-cache-interval 3)
 ```
 
+## Weather Configuration Details
+
+The weather module includes robust error handling and caching:
+
+```elisp
+;; Weather fetch settings
+(setq punch-weather-update-interval 3600        ; Update every hour (seconds)
+      punch-weather-request-timeout 10          ; Request timeout (seconds)
+      punch-weather-max-retries 3)              ; Max retry attempts
+```
+
+### Weather Commands
+
+```elisp
+M-x punch-weather-cleanup       ; Clean up timers and buffers
+M-x punch-weather-force-update  ; Force immediate weather update
+```
+
+## Changelog
+
+### Version 1.1 (2025-01-31)
+
+#### Weather Module (`punch-line-weather.el`)
+- **Fixed:** "Selecting deleted buffer" errors during long Emacs sessions
+- **Fixed:** Race conditions with buffer lifecycle management
+- **Added:** Fetch guard to prevent multiple simultaneous API requests
+- **Improved:** Timeout handling with proper buffer cleanup
+- **Improved:** Error handling in async callbacks
+
+#### Music Module (`punch-line-music.el`)
+- **Fixed:** Buffer lifecycle issues in process sentinel
+- **Improved:** Timeout handler now uses proper closure with process parameter
+- **Improved:** More robust buffer existence checks before operations
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.

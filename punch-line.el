@@ -65,15 +65,6 @@ This controls the internal spacing around text within sections."
 (defvar punch-line--update-timer nil
   "Timer for debouncing mode-line updates.")
 
-(defvar-local punch-line--cached-left nil
-  "Cache for the left section of the mode-line.")
-
-(defvar-local punch-line--cached-right nil
-  "Cache for the right section of the mode-line.")
-
-(defvar-local punch-line--cached-right-str nil
-  "Cached string for the right section of the mode-line.")
-
 (defvar punch-line--last-update 0
   "Timestamp of last mode-line update.")
 
@@ -366,9 +357,7 @@ If FORCE is non-nil, bypass the update interval check."
              0.05 nil
              (lambda ()
                (setq punch-line--last-update current-time
-                     punch-line-active-window (selected-window)
-                     punch-line--cached-left nil
-                     punch-line--cached-right nil)
+                     punch-line-active-window (selected-window))
                (force-mode-line-update t)))))))
 
 (defun punch-line-set-mode-line ()
@@ -386,7 +375,11 @@ If FORCE is non-nil, bypass the update interval check."
   (add-hook 'window-size-change-functions (lambda (_) (punch-line-invalidate-fill-cache)))
   (add-hook 'after-load-theme-hook #'punch-line-update-inactive-face)
   (add-hook 'after-save-hook #'punch-git-invalidate-cache)
-  (add-hook 'vc-mode-line-hook #'punch-git-invalidate-cache))
+  (add-hook 'vc-mode-line-hook #'punch-git-invalidate-cache)
+  ;; Invalidate git cache on branch switch
+  (when (fboundp 'magit-post-checkout-hook)
+    (add-hook 'magit-post-checkout-hook #'punch-git-invalidate-cache))
+  (add-hook 'find-file-hook #'punch-git-invalidate-cache))
 
 (defun punch-line-remove-hooks ()
   "Remove hooks to update the mode-line."
@@ -398,7 +391,12 @@ If FORCE is non-nil, bypass the update interval check."
   (remove-hook 'window-state-change-hook #'punch-line-update)
   (remove-hook 'window-size-change-functions (lambda (_) (punch-line-invalidate-fill-cache)))
   (remove-hook 'after-load-theme-hook #'punch-line-update-inactive-face)
-  (remove-hook 'after-save-hook #'punch-git-invalidate-cache))
+  (remove-hook 'after-save-hook #'punch-git-invalidate-cache)
+  (remove-hook 'vc-mode-line-hook #'punch-git-invalidate-cache)
+  ;; Remove branch switch hooks
+  (when (fboundp 'magit-post-checkout-hook)
+    (remove-hook 'magit-post-checkout-hook #'punch-git-invalidate-cache))
+  (remove-hook 'find-file-hook #'punch-git-invalidate-cache))
 
 (define-minor-mode punch-line-mode
   "Activate Punch Line mode."
@@ -436,19 +434,10 @@ If FORCE is non-nil, bypass the update interval check."
 (defun punch-line-invalidate-fill-cache ()
   "Invalidate the fill cache."
   (setq punch-line--cached-fill nil
-        punch-line--cached-right-width nil
-        punch-line--cached-right-str nil))
+        punch-line--cached-right-width nil))
 
-(defun punch-line-invalidate-cache ()
-  "Invalidate the basic mode-line caches."
-  (setq punch-line--cached-left nil
-        punch-line--cached-right nil
-        punch-line--cached-right-str nil))
-
-;; Add this to your cache invalidation logic
 (defun punch-line-invalidate-caches ()
   "Invalidate all caches."
-  (punch-line-invalidate-cache)  ; Your existing cache invalidation
   (punch-line-invalidate-fill-cache)
   (setq-local punch-git-info-cache nil
               punch-git-info-cache-time 0

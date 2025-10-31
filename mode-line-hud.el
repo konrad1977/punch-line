@@ -120,9 +120,19 @@
   ;; Ensure we're in the main thread
   (if (not (zerop (recursion-depth)))
       (run-with-timer 0 nil #'mode-line-hud--update-display text)
-    (setq-local mode-line-segment-hud--text text)
+    ;; Force cache invalidation by temporarily clearing then setting
+    (setq-local mode-line-segment-hud--text "")
+    (force-mode-line-update 'all)
+    ;; Add space prefix if text is not empty
+    (setq-local mode-line-segment-hud--text
+                (if (and text (not (string-empty-p text)))
+                    (concat " " text)
+                  text))
     (when show-in-echo-area
       (message text))
+    ;; Trigger punch-line update if available
+    (when (fboundp 'punch-line-update)
+      (punch-line-update t))
     (force-mode-line-update 'all)))
 
 (defun mode-line-hud--reset-timer()
