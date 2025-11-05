@@ -74,6 +74,12 @@
 (defvar punch-weather--fetching-p nil
   "Non-nil when a weather fetch is in progress.")
 
+(defvar punch-weather--last-successful-fetch nil
+  "Timestamp of last successful weather fetch.")
+
+(defvar punch-weather--consecutive-failures 0
+  "Count of consecutive failures for backoff calculation.")
+
 (defun punch-weather--icon-from-code (code)
   "Return a nerd-icon based on the weather CODE."
   (condition-case nil
@@ -137,32 +143,50 @@
               (unless (re-search-forward "^$" nil t)
                 (error "Invalid response format"))
 
-              (let* ((json-object-type 'hash-table)
-                     (json-array-type 'list)
-                     (json-key-type 'symbol)
-                     (json-data (json-read-from-string
-                                (buffer-substring-no-properties (point) (point-max))))
-                     (current-weather (gethash 'current_weather json-data)))
+              (let ((json-string (buffer-substring-no-properties (point) (point-max))))
+                ;; Validate we have actual JSON content
+                (when (or (string-empty-p (string-trim json-string))
+                          (< (length json-string) 10))
+                  (error "Empty or invalid JSON response"))
 
-                (unless current-weather
-                  (error "No weather data in response"))
+                (let* ((json-object-type 'hash-table)
+                       (json-array-type 'list)
+                       (json-key-type 'symbol)
+                       (json-data (condition-case json-err
+                                      (json-read-from-string json-string)
+                                    (error
+                                     (error "JSON parsing failed: %s" (error-message-string json-err)))))
+                       (current-weather (gethash 'current_weather json-data)))
 
-                (let ((temp (gethash 'temperature current-weather))
-                      (weather-code (gethash 'weathercode current-weather)))
-                  (setq punch-weather-icon (punch-weather--icon-from-code weather-code))
-                  (setq punch-weather-temperature
-                        (if punch-weather-use-fahrenheit
-                            (format "%.1f°F" (+ (* temp 1.8) 32))
-                          (format "%.1f°C" temp)))
-                  (setq punch-weather-description
-                        (punch-weather--description-from-code weather-code))
-                  (setq punch-weather--retry-count 0)
-                  (setq punch-weather--fetching-p nil)
-                  (message "Weather updated: %s %s" punch-weather-temperature punch-weather-description))))
+                  (unless current-weather
+                    (error "No weather data in response"))
+
+                  (let ((temp (gethash 'temperature current-weather))
+                        (weather-code (gethash 'weathercode current-weather)))
+                    (unless (and temp weather-code)
+                      (error "Invalid weather data structure"))
+                    (setq punch-weather-icon (punch-weather--icon-from-code weather-code))
+                    (setq punch-weather-temperature
+                          (if punch-weather-use-fahrenheit
+                              (format "%.1f°F" (+ (* temp 1.8) 32))
+                            (format "%.1f°C" temp)))
+                    (setq punch-weather-description
+                          (punch-weather--description-from-code weather-code))
+                    (setq punch-weather--retry-count 0)
+                    (setq punch-weather--consecutive-failures 0)
+                    (setq punch-weather--last-successful-fetch (current-time))
+                    (setq punch-weather--fetching-p nil)
+                    ;; Only show update message if we had previous failures
+                    (when (> punch-weather--consecutive-failures 0)
+                      (message "Weather updated: %s %s" punch-weather-temperature punch-weather-description))))))
 
           (error
            (setq punch-weather--fetching-p nil)
-           (message "Weather fetch error: %s" (error-message-string err))
+           (setq punch-weather--consecutive-failures (1+ punch-weather--consecutive-failures))
+           ;; Only show errors if we don't have cached data or after multiple failures
+           (when (or (not punch-weather-temperature)
+                     (> punch-weather--consecutive-failures 3))
+             (message "Weather fetch error: %s" (error-message-string err)))
            (punch-weather--schedule-retry)))
 
       ;; Always cleanup buffer, but only if it still exists
@@ -178,9 +202,15 @@
   "Schedule a retry with exponential backoff."
   (when (< punch-weather--retry-count punch-weather-max-retries)
     (setq punch-weather--retry-count (1+ punch-weather--retry-count))
-    (let ((delay (* (expt 2 punch-weather--retry-count) 5)))
-      (message "Retrying weather fetch in %d seconds (attempt %d/%d)..."
-               delay punch-weather--retry-count punch-weather-max-retries)
+    ;; Use longer backoff times, especially for consecutive failures
+    (let ((delay (* (expt 2 (+ punch-weather--retry-count
+                               (min 3 (/ punch-weather--consecutive-failures 2))))
+                    10)))
+      ;; Only show retry messages for early attempts or severe failures
+      (when (or (<= punch-weather--retry-count 1)
+                (> punch-weather--consecutive-failures 5))
+        (message "Retrying weather fetch in %d seconds (attempt %d/%d)..."
+                 delay punch-weather--retry-count punch-weather-max-retries))
       (run-with-timer delay nil #'punch-weather--fetch-data))))
 
 (defun punch-weather--fetch-data ()
@@ -228,15 +258,23 @@
                                    (set-process-query-on-exit-flag proc nil)
                                    (delete-process proc)
                                    (setq punch-weather--fetching-p nil)
-                                   (message "Weather request timed out after %d seconds"
-                                           punch-weather-request-timeout)
+                                   (setq punch-weather--consecutive-failures
+                                         (1+ punch-weather--consecutive-failures))
+                                   ;; Only show timeout message if we don't have cached data
+                                   (when (or (not punch-weather-temperature)
+                                             (> punch-weather--consecutive-failures 3))
+                                     (message "Weather request timed out after %d seconds"
+                                             punch-weather-request-timeout))
                                    (punch-weather--schedule-retry)))
                                (kill-buffer buf)))
                            buffer))
 
         (error
          (setq punch-weather--fetching-p nil)
-         (message "Failed to start weather request: %s" (error-message-string err))
+         (setq punch-weather--consecutive-failures (1+ punch-weather--consecutive-failures))
+         ;; Only show startup errors after multiple failures
+         (when (> punch-weather--consecutive-failures 2)
+           (message "Failed to start weather request: %s" (error-message-string err)))
          (punch-weather--schedule-retry))))))
 
 (defun punch-weather-info ()
@@ -273,6 +311,7 @@
     (setq punch-weather--update-timer nil))
   (punch-weather--cleanup-old-buffers)
   (setq punch-weather--retry-count 0)
+  (setq punch-weather--consecutive-failures 0)
   (setq punch-weather--fetching-p nil)
   (message "Weather cleanup complete"))
 
@@ -280,6 +319,7 @@
   "Force an immediate weather update."
   (interactive)
   (setq punch-weather--retry-count 0)
+  (setq punch-weather--consecutive-failures 0)
   (setq punch-weather--fetching-p nil)
   (punch-weather--cleanup-old-buffers)
   (punch-weather--fetch-data))

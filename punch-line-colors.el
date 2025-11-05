@@ -44,16 +44,29 @@ Additional face attributes (WEIGHT, SLANT, etc.) can be specified."
     spec))
 
 (defun adjust-color (color percent)
-  "Adjust COLOR by PERCENT (-100 to 100)."
-  (if (string= color "unspecified")
-      color
-    (let* ((rgb (color-name-to-rgb color))
-           (adjusted-rgb (mapcar (lambda (comp)
-                                  (if (> percent 0)
-                                      (min 1.0 (+ comp (* (- 1.0 comp) (/ percent 100.0))))
-                                      (max 0.0 (+ comp (* comp (/ percent 100.0))))))
-                                rgb)))
-      (apply 'color-rgb-to-hex adjusted-rgb))))
+  "Adjust COLOR by PERCENT (-100 to 100).
+Handles macOS system colors and invalid color names gracefully."
+  (if (or (string= color "unspecified")
+          (null color))
+      (or color "unspecified")
+    (condition-case err
+        (let* ((rgb (color-name-to-rgb color)))
+          (if (null rgb)
+              ;; If color-name-to-rgb returns nil, try to use the color as-is
+              ;; or fall back to a default
+              (progn
+                (message "Warning: Unable to convert color '%s', using default" color)
+                (or (ignore-errors (face-background 'default)) "unspecified"))
+            (let ((adjusted-rgb (mapcar (lambda (comp)
+                                          (if (> percent 0)
+                                              (min 1.0 (+ comp (* (- 1.0 comp) (/ percent 100.0))))
+                                            (max 0.0 (+ comp (* comp (/ percent 100.0))))))
+                                        rgb)))
+              (apply 'color-rgb-to-hex adjusted-rgb))))
+      (error
+       ;; On error (e.g., macOS system colors like "systemBlueColor"), fall back gracefully
+       (message "Warning: Color adjustment failed for '%s': %s" color (error-message-string err))
+       (or (ignore-errors (face-background 'default)) "unspecified")))))
 
 ;;; Evil faces
 (defface punch-line-evil-normal-face

@@ -99,12 +99,13 @@ end tell" app-name app-name)))
       (setq punch-music-info-last-update current-time)
       ;; Cleanup any existing process first
       (punch-line-cleanup-stale-process)
-      (let* ((buffer-name "*punch-line-music-info*")
-             (process
-              (start-process "punch-line-music-info"
-                           buffer-name
-                           "osascript"
-                           "-e" (punch-line-music-info-command service))))
+      (condition-case err
+          (let* ((buffer-name "*punch-line-music-info*")
+                 (process
+                  (start-process "punch-line-music-info"
+                               buffer-name
+                               "osascript"
+                               "-e" (punch-line-music-info-command service))))
         ;; Set process timeout with proper closure
         (run-with-timer punch-line-process-timeout nil
                        (lambda (proc)
@@ -120,7 +121,8 @@ end tell" app-name app-name)))
         (set-process-sentinel
          process
          (lambda (proc event)
-           (when (string= event "finished\n")
+           (condition-case sentinel-err
+               (when (string= event "finished\n")
              ;; Check buffer is alive before trying to read from it
              (let ((proc-buffer (process-buffer proc)))
                (when (and proc-buffer (buffer-live-p proc-buffer))
@@ -134,11 +136,17 @@ end tell" app-name app-name)))
                                          (propertize (punch-line-trim-music-info output)
                                                    'face 'punch-line-music-face))
                                (concat (punch-line-icon) " "))))
-                     (force-mode-line-update t))))))
-           ;; Clean up process buffer
+                     (ignore-errors (force-mode-line-update t)))))))
+             (error
+              ;; Silently handle any sentinel errors to prevent overnight crashes
+              (setq punch-music-info-cache "")))
+           ;; Always clean up process buffer
            (let ((proc-buffer (process-buffer proc)))
              (when (and proc-buffer (buffer-live-p proc-buffer))
-               (kill-buffer proc-buffer)))))))))
+               (kill-buffer proc-buffer))))))
+        (error
+         ;; If we can't start the process, just keep the existing cache
+         nil)))))
 
 (defun punch-line-trim-music-info (info)
   "Trim the music INFO to a maximum length."
