@@ -1,11 +1,14 @@
 ;;; punch-line.el --- A customizeable mode-line with Evil  -*- lexical-binding: t; -*-
 
+;; Copyright (C) 2025 Mikael Konradsson
 ;; Author: Mikael Konradsson
 ;; Version: 1.0
-;; Package-Requires: ((emacs "28.1"))
+;; Package-Requires: ((emacs "28.1") (async "1.9"))
 ;; URL: https://github.com/konrad1977/punch-line
+;; Keywords: mode-line, faces
 
 ;;; Commentary:
+
 ;; This package offers a customized mode-line for Emacs.
 ;; Configurable colors, and the ability to customize displayed information.
 

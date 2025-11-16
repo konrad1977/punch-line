@@ -1,4 +1,3 @@
-
 ;;; punch-line-term.el --- A customized mode-line for Emacs with modal status and advanced customizations -*- lexical-binding: t; -*-
 
 ;; Author: Mikael Konradsson

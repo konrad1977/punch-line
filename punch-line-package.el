@@ -1,7 +1,20 @@
-;; punch-line-package.el - punch-line - A minimal mode line for Emacs -*- lexical-binding: t; -*-
+;;; punch-line-package.el --- Package update tracking for punch-line -*- lexical-binding: t; -*-
+
+;; Copyright (C) 2025 Mikael Konradsson
+;; Author: Mikael Konradsson
+;; Version: 1.0
+;; Package-Requires: ((emacs "28.1") (async "1.9") (nerd-icons "0.1.0"))
+;; Keywords: mode-line, packages
+
+;;; Commentary:
+
+;; Package update tracking and display for punch-line mode-line
+
 ;;; Code:
+
 (require 'package)
 (require 'cl-lib)
+(require 'async)
 (require 'nerd-icons)
 
 (defface punch-line-package-update-face
