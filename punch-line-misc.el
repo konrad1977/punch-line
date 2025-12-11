@@ -10,7 +10,6 @@
 ;;; Code:
 
 (require 'eglot)
-(require 'flycheck)
 (require 'nerd-icons)
 (require 'project)
 (require 'punch-line-colors)
@@ -18,11 +17,25 @@
 (when (featurep 'projectile)
   (require 'projectile))
 
-(defvar-local punch-flycheck-cache nil
-  "Cache for flycheck information.")
+(when (featurep 'flycheck)
+  (require 'flycheck))
 
-(defvar-local punch-flycheck-cache-timer nil
-  "Timer for clearing flycheck cache.")
+(when (featurep 'flymake)
+  (require 'flymake))
+
+;; Declare functions to avoid byte-compilation warnings
+(declare-function flycheck-count-errors "flycheck")
+(declare-function flymake-diagnostics "flymake")
+(declare-function flymake-diagnostic-type "flymake")
+
+(defvar-local punch-diagnostics-cache nil
+  "Cache for diagnostics information.")
+
+(defvar-local punch-diagnostics-cache-timer nil
+  "Timer for clearing diagnostics cache.")
+
+(defvar-local punch-diagnostics-cache-time nil
+  "Timestamp of last cache update.")
 
 (defgroup punch-line nil
   "Customization group for punch-line."
@@ -83,59 +96,86 @@
   :type 'boolean
   :group 'punch-line)
 
-(defcustom punch-show-flycheck-info t
-  "If set to t, show flycheck information."
+(defcustom punch-show-diagnostics-info t
+  "If set to t, show diagnostics information."
   :type 'boolean
   :group 'punch-line)
 
-(defcustom punch-flycheck-cache-interval 3
-  "Time in seconds to cache flycheck information."
+(defcustom punch-diagnostics-checker 'auto
+  "Diagnostic checker preference for punch-line.
+When set to 'auto, automatically detect available checker.
+When set to 'flycheck, prefer flycheck if available.
+When set to 'flymake, prefer flymake if available."
+  :type '(choice (const :tag "Auto-detect" auto)
+                 (const :tag "Flycheck" flycheck)
+                 (const :tag "Flymake" flymake))
+  :group 'punch-line)
+
+(defcustom punch-diagnostics-cache-interval 3
+  "Time in seconds to cache diagnostics information."
   :type 'integer
   :group 'punch-line)
 
-(defun punch-flycheck-create-cache ()
-  "Create a cache for flycheck information."
-  (when (and (bound-and-true-p flycheck-mode)
-             punch-show-flycheck-info
+(defun punch-diagnostics-create-cache ()
+  "Create a cache for diagnostics information based on active checker."
+  (when punch-show-diagnostics-info
+    (let ((info 0) (warning 0) (error 0))
+      ;; Get counts from active checker
+      (cond
+       ;; Flycheck
+       ((and (or (eq punch-diagnostics-checker 'flycheck)
+                 (eq punch-diagnostics-checker 'auto))
+             (bound-and-true-p flycheck-mode)
              (or flycheck-current-errors
                  (eq 'running flycheck-last-status-change)))
-    (let* ((count (flycheck-count-errors flycheck-current-errors))
-           (info (or (cdr (assq 'info count)) 0))
-           (warning (or (cdr (assq 'warning count)) 0))
-           (error (or (cdr (assq 'error count)) 0))
-           (info-str (when (> info 0)
-                      (propertize (format "%s %d" (nerd-icons-codicon "nf-cod-lightbulb") info)
-                                'face '(:inherit success))))
-           (warning-str (when (> warning 0)
+        (let ((count (flycheck-count-errors flycheck-current-errors)))
+          (setq info (or (cdr (assq 'info count)) 0)
+                warning (or (cdr (assq 'warning count)) 0)
+                error (or (cdr (assq 'error count)) 0))))
+       ;; Flymake
+       ((and (or (eq punch-diagnostics-checker 'flymake)
+                 (eq punch-diagnostics-checker 'auto))
+             (bound-and-true-p flymake-mode))
+        (dolist (diag (flymake-diagnostics))
+          (pcase (flymake-diagnostic-type diag)
+            (:note (setq info (1+ info)))
+            (:warning (setq warning (1+ warning)))
+            (:error (setq error (1+ error)))))))
+      ;; Format and return
+      (when (> (+ info warning error) 0)
+        (string-join
+         (remove nil
+                 (list (when (> info 0)
+                         (propertize (format "%s %d" (nerd-icons-codicon "nf-cod-lightbulb") info)
+                                     'face '(:inherit success)))
+                       (when (> warning 0)
                          (propertize (format "%s %d" (nerd-icons-codicon "nf-cod-warning") warning)
-                                   'face '(:inherit warning))))
-           (error-str (when (> error 0)
-                       (propertize (format "%s %d" (nerd-icons-codicon "nf-cod-error") error)
-                                 'face '(:inherit error)))))
-      (string-join
-       (remove nil
-               (list info-str
-                     warning-str
-                     error-str))
-       " "))))
+                                     'face '(:inherit warning)))
+                       (when (> error 0)
+                         (propertize (format "%s %d" (nerd-icons-codicon "nf-cod-error") error)
+                                     'face '(:inherit error)))))
+         " ")))))
 
-(defun punch-flycheck-info ()
-  "Return flycheck information, updating the cache if necessary."
-  (when punch-show-flycheck-info
+(defun punch-diagnostics-info ()
+  "Return diagnostics information, updating the cache if necessary."
+  (when punch-show-diagnostics-info
     (let ((current-time (float-time)))
-      (when (or (null punch-flycheck-cache)
-                (null punch-flycheck-cache-time)
-                (> (- current-time punch-flycheck-cache-time)
-                   punch-flycheck-cache-interval))
-        (setq punch-flycheck-cache-time current-time
-              punch-flycheck-cache (punch-flycheck-create-cache))
+      (when (or (null punch-diagnostics-cache)
+                (null punch-diagnostics-cache-time)
+                (> (- current-time punch-diagnostics-cache-time)
+                   punch-diagnostics-cache-interval))
+        (setq punch-diagnostics-cache-time current-time
+              punch-diagnostics-cache (punch-diagnostics-create-cache)))
       ;; Force refresh if cache is empty but should have data
-      (when (and (null punch-flycheck-cache)
-                 (bound-and-true-p flycheck-mode)
-                 (or flycheck-current-errors
-                     (eq 'running flycheck-last-status-change)))
-        (setq punch-flycheck-cache (punch-flycheck-create-cache))))
-      punch-flycheck-cache)))
+      (when (and (null punch-diagnostics-cache)
+                 (or (bound-and-true-p flycheck-mode)
+                     (bound-and-true-p flymake-mode)))
+        (setq punch-diagnostics-cache (punch-diagnostics-create-cache)))
+      punch-diagnostics-cache)))
+
+;; Deprecated alias for backward compatibility
+(defalias 'punch-flycheck-info 'punch-diagnostics-info
+  "Deprecated alias for `punch-diagnostics-info'.")
 
 
 (defun punch-process-info ()
