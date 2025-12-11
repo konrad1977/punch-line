@@ -1,6 +1,9 @@
 ;;; mode-line-hud.el --- Package for interacting with mood-line -*- lexical-binding: t; -*-
 ;;; Commentary:
 ;; Package for interacting with mood-line.
+
+(eval-when-compile
+  (require 'cl-macs))
 ;;; Code:
 (defgroup mode-line-hud nil
   "Mode-line hud."
