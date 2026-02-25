@@ -77,8 +77,17 @@
 (defvar punch-weather--last-successful-fetch nil
   "Timestamp of last successful weather fetch.")
 
+(defvar punch-weather--last-fetch-attempt nil
+  "Timestamp of last fetch attempt (successful or not).")
+
 (defvar punch-weather--consecutive-failures 0
   "Count of consecutive failures for backoff calculation.")
+
+(defvar punch-weather--paused-p nil
+  "Non-nil when weather polling is paused (e.g., Emacs lost focus).")
+
+(defvar punch-weather--retry-timer nil
+  "Timer for retry attempts.")
 
 (defun punch-weather--icon-from-code (code)
   "Return a nerd-icon based on the weather CODE."
@@ -183,10 +192,12 @@
           (error
            (setq punch-weather--fetching-p nil)
            (setq punch-weather--consecutive-failures (1+ punch-weather--consecutive-failures))
-           ;; Only show errors if we don't have cached data or after multiple failures
-           (when (or (not punch-weather-temperature)
-                     (> punch-weather--consecutive-failures 3))
-             (message "Weather fetch error: %s" (error-message-string err)))
+           ;; Only log errors sparingly - first failure and then every 10th
+           (when (or (= punch-weather--consecutive-failures 1)
+                     (= 0 (% punch-weather--consecutive-failures 10)))
+             (message "Weather fetch error: %s (attempt %d)"
+                      (error-message-string err)
+                      punch-weather--consecutive-failures))
            (punch-weather--schedule-retry)))
 
       ;; Always cleanup buffer, but only if it still exists
@@ -200,25 +211,30 @@
 
 (defun punch-weather--schedule-retry ()
   "Schedule a retry with exponential backoff."
-  (when (< punch-weather--retry-count punch-weather-max-retries)
+  (when (and (< punch-weather--retry-count punch-weather-max-retries)
+             (not punch-weather--paused-p))
     (setq punch-weather--retry-count (1+ punch-weather--retry-count))
     ;; Use longer backoff times, especially for consecutive failures
     (let ((delay (* (expt 2 (+ punch-weather--retry-count
-                               (min 3 (/ punch-weather--consecutive-failures 2))))
+                                (min 3 (/ punch-weather--consecutive-failures 2))))
                     10)))
-      ;; Only show retry messages for early attempts or severe failures
-      (when (or (<= punch-weather--retry-count 1)
-                (> punch-weather--consecutive-failures 5))
-        (message "Retrying weather fetch in %d seconds (attempt %d/%d)..."
-                 delay punch-weather--retry-count punch-weather-max-retries))
-      (run-with-timer delay nil #'punch-weather--fetch-data))))
+      ;; Only show retry message on first attempt
+      (when (= punch-weather--retry-count 1)
+        (message "Retrying weather fetch in %d seconds..."
+                 delay))
+      ;; Cancel any existing retry timer before scheduling a new one
+      (when (timerp punch-weather--retry-timer)
+        (cancel-timer punch-weather--retry-timer))
+      (setq punch-weather--retry-timer
+            (run-with-timer delay nil #'punch-weather--fetch-data)))))
 
 (defun punch-weather--fetch-data ()
   "Fetch weather data from API with timeout and error handling."
-  ;; Don't fetch if already fetching
-  (unless punch-weather--fetching-p
-    ;; Set fetching flag
+  ;; Don't fetch if already fetching or if paused
+  (unless (or punch-weather--fetching-p punch-weather--paused-p)
+    ;; Set fetching flag and record attempt time
     (setq punch-weather--fetching-p t)
+    (setq punch-weather--last-fetch-attempt (current-time))
 
     ;; Clean up any old hanging buffers first
     (punch-weather--cleanup-old-buffers)
@@ -260,11 +276,12 @@
                                    (setq punch-weather--fetching-p nil)
                                    (setq punch-weather--consecutive-failures
                                          (1+ punch-weather--consecutive-failures))
-                                   ;; Only show timeout message if we don't have cached data
-                                   (when (or (not punch-weather-temperature)
-                                             (> punch-weather--consecutive-failures 3))
-                                     (message "Weather request timed out after %d seconds"
-                                             punch-weather-request-timeout))
+                                    ;; Only log timeout sparingly
+                                    (when (or (= punch-weather--consecutive-failures 1)
+                                              (= 0 (% punch-weather--consecutive-failures 10)))
+                                      (message "Weather request timed out after %d seconds (attempt %d)"
+                                              punch-weather-request-timeout
+                                              punch-weather--consecutive-failures))
                                    (punch-weather--schedule-retry)))
                                (kill-buffer buf)))
                            buffer))
@@ -272,15 +289,32 @@
         (error
          (setq punch-weather--fetching-p nil)
          (setq punch-weather--consecutive-failures (1+ punch-weather--consecutive-failures))
-         ;; Only show startup errors after multiple failures
-         (when (> punch-weather--consecutive-failures 2)
-           (message "Failed to start weather request: %s" (error-message-string err)))
+         ;; Only log sparingly
+         (when (or (= punch-weather--consecutive-failures 1)
+                   (= 0 (% punch-weather--consecutive-failures 10)))
+           (message "Failed to start weather request: %s (attempt %d)"
+                    (error-message-string err)
+                    punch-weather--consecutive-failures))
          (punch-weather--schedule-retry))))))
+
+(defun punch-weather--should-fetch-p ()
+  "Return non-nil if enough time has passed to attempt a new fetch.
+Uses exponential backoff based on consecutive failures."
+  (or (null punch-weather--last-fetch-attempt)
+      (let* ((backoff-seconds (if (> punch-weather--consecutive-failures 0)
+                                  ;; Exponential backoff: 30s, 60s, 120s, 240s... capped at 30min
+                                  (min 1800 (* 30 (expt 2 (1- punch-weather--consecutive-failures))))
+                                10))
+             (elapsed (float-time (time-subtract (current-time)
+                                                 punch-weather--last-fetch-attempt))))
+        (> elapsed backoff-seconds))))
 
 (defun punch-weather-info ()
   "Return formatted weather information for the mode-line."
   (when punch-show-weather-info
-    (unless (and punch-weather-temperature punch-weather-icon)
+    (when (and (not (and punch-weather-temperature punch-weather-icon))
+               (not punch-weather--fetching-p)
+               (punch-weather--should-fetch-p))
       (punch-weather--fetch-data))
     (if (and punch-weather-temperature
              punch-weather-icon
@@ -293,7 +327,7 @@
          (propertize punch-weather-temperature
                      'face 'font-lock-constant-face
                      'help-echo (or punch-weather-description "Weather")))
-      "Loading...")))
+      "")))
 
 (defun punch-weather-update ()
   "Update weather data periodically."
@@ -306,13 +340,18 @@
 (defun punch-weather-cleanup ()
   "Clean up all weather-related timers and buffers."
   (interactive)
-  (when punch-weather--update-timer
+  (when (timerp punch-weather--update-timer)
     (cancel-timer punch-weather--update-timer)
     (setq punch-weather--update-timer nil))
+  (when (timerp punch-weather--retry-timer)
+    (cancel-timer punch-weather--retry-timer)
+    (setq punch-weather--retry-timer nil))
   (punch-weather--cleanup-old-buffers)
   (setq punch-weather--retry-count 0)
   (setq punch-weather--consecutive-failures 0)
   (setq punch-weather--fetching-p nil)
+  (setq punch-weather--paused-p nil)
+  (setq punch-weather--last-fetch-attempt nil)
   (message "Weather cleanup complete"))
 
 (defun punch-weather-force-update ()
@@ -321,8 +360,57 @@
   (setq punch-weather--retry-count 0)
   (setq punch-weather--consecutive-failures 0)
   (setq punch-weather--fetching-p nil)
+  (setq punch-weather--last-fetch-attempt nil)
   (punch-weather--cleanup-old-buffers)
   (punch-weather--fetch-data))
+
+(defun punch-weather--on-focus-out ()
+  "Pause weather polling when Emacs loses focus.
+Cancels all pending timers and kills hanging HTTP processes."
+  (setq punch-weather--paused-p t)
+  ;; Cancel pending timers to prevent fetches while unfocused
+  (when (timerp punch-weather--update-timer)
+    (cancel-timer punch-weather--update-timer)
+    (setq punch-weather--update-timer nil))
+  (when (timerp punch-weather--retry-timer)
+    (cancel-timer punch-weather--retry-timer)
+    (setq punch-weather--retry-timer nil))
+  ;; Kill any in-flight requests
+  (punch-weather--cleanup-old-buffers)
+  (setq punch-weather--fetching-p nil))
+
+(defun punch-weather--on-focus-in ()
+  "Resume weather polling when Emacs regains focus.
+Cleans up stale buffers/processes and schedules a fresh update."
+  (setq punch-weather--paused-p nil)
+  ;; Always clean up any stale buffers/processes from the unfocused period
+  (punch-weather--cleanup-old-buffers)
+  (setq punch-weather--fetching-p nil)
+  ;; Reset retry state so we get a fresh start
+  (setq punch-weather--retry-count 0)
+  ;; If enough time has passed since last successful fetch, update now
+  (when (or (null punch-weather--last-successful-fetch)
+            (> (float-time (time-subtract (current-time)
+                                          punch-weather--last-successful-fetch))
+               punch-weather-update-interval))
+    (punch-weather--fetch-data))
+  ;; Restart the periodic update timer
+  (unless punch-weather--update-timer
+    (setq punch-weather--update-timer
+          (run-with-timer punch-weather-update-interval nil #'punch-weather-update))))
+
+(defun punch-weather-enable-focus-hooks ()
+  "Enable focus-based weather polling management."
+  (add-hook 'focus-out-hook #'punch-weather--on-focus-out)
+  (add-hook 'focus-in-hook #'punch-weather--on-focus-in))
+
+(defun punch-weather-disable-focus-hooks ()
+  "Disable focus-based weather polling management."
+  (remove-hook 'focus-out-hook #'punch-weather--on-focus-out)
+  (remove-hook 'focus-in-hook #'punch-weather--on-focus-in))
+
+;; Automatically enable focus hooks when this module is loaded
+(punch-weather-enable-focus-hooks)
 
 ;; Note: The update cycle should be started manually via `punch-weather-update`
 ;; or through a hook (e.g., after-init-hook) to avoid duplicate initialization.

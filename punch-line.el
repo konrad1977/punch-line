@@ -35,33 +35,36 @@
   :group 'mode-line)
 
 (defcustom punch-line-section-backgrounds nil
-  "Alist of section backgrounds where each element is (SECTION-NAME . COLOR).
-SECTION-NAME can be 'filename, 'battery, 'git, 'major-mode, 'project, etc.
-COLOR is a hex color string like \"#201010\".
-Set to 'auto for automatic tinting based on mode-line background."
-  :type '(choice (const :tag "Automatic tinting" auto)
+  "Control section background tinting in the mode-line.
+nil      - No section backgrounds.
+t / auto - Automatic tinting based on mode-line background color.
+alist    - Manual per-section colors, e.g. ((filename . \"#201010\"))."
+  :type '(choice (const :tag "Off" nil)
+                 (const :tag "Automatic tinting" t)
+                 (const :tag "Automatic tinting (alias)" auto)
                  (alist :tag "Manual colors"
                         :key-type (symbol :tag "Section")
                         :value-type (string :tag "Color")))
   :group 'punch-line)
 
-(defcustom punch-line-section-background-tint-start 20
-  "Starting tint percentage for the first section when using automatic backgrounds.
-This is the percentage of the original mode-line background color."
+(defcustom punch-line-section-background-tint-start -20
+  "Starting tint percentage for the outermost sections when using automatic backgrounds.
+Negative values darken, positive values lighten.  For example, -20 means
+the outermost sections are 20%% darker than the mode-line background."
   :type 'number
   :group 'punch-line)
 
-(defcustom punch-line-section-background-tint-step 10
-  "Percentage step to increase tint for each consecutive section.
-This is a percentage of the starting tint value, not the original color.
-For example, if start is 20% and step is 10%, sections will be:
-20%, 22% (20% + 10% of 20%), 24.2% (22% + 10% of 22%), etc."
+(defcustom punch-line-section-background-tint-step 50
+  "Percentage by which each inner section reduces the tint toward zero.
+For example, with start=-20 and step=50, sections will be:
+-20%%, -10%%, -5%%, -2.5%%, etc. (each step halves the tint)."
   :type 'number
   :group 'punch-line)
 
-(defcustom punch-line-section-padding 2
-  "Number of spaces to add as padding inside each section with background.
-This controls the internal spacing around text within sections."
+(defcustom punch-line-section-padding 1
+  "Number of space characters to add on each side of a section with background.
+A value of 1 adds one space before and one space after the section text.
+Typical values are 0-3; larger values will make sections very wide."
   :type 'integer
   :group 'punch-line)
 
@@ -109,12 +112,18 @@ This controls the internal spacing around text within sections."
 
 (defun punch-line-update-inactive-face ()
   "Update the punch-line-inactive-face with the current theme colors."
-  (let* ((bg-color (face-background 'mode-line-inactive nil t))
-         (fg-color (face-foreground 'mode-line-inactive nil t)))
+  (let* ((bg-color (or (face-background 'mode-line-inactive nil t)
+                       (face-background 'mode-line nil t)
+                       (face-background 'default nil t)
+                       "#000000"))
+         (fg-color (or (face-foreground 'mode-line-inactive nil t)
+                       (face-foreground 'default nil t)
+                       "#ffffff"))
+         (height-adjust (max 1 (/ (punch-line-modal-height) 2))))
     (set-face-attribute 'punch-line-inactive-face nil
                         :background bg-color
-                        :foreground fg-color  
-                        :box `(:line-width ,(punch-line-modal-height) :color ,bg-color)
+                        :foreground fg-color
+                        :box `(:line-width ,height-adjust :color ,bg-color)
                         :underline nil)))
 
 (defun punch-line-calculate-section-background (section-name section-index &optional is-left-side)
@@ -124,42 +133,45 @@ IS-LEFT-SIDE determines tinting direction. Returns a color string or nil."
    ((and (listp punch-line-section-backgrounds)
          (assoc section-name punch-line-section-backgrounds))
     (cdr (assoc section-name punch-line-section-backgrounds)))
-   ((eq punch-line-section-backgrounds 'auto)
-    (let* ((base-bg (face-background 'mode-line nil t))
+   ((memq punch-line-section-backgrounds '(auto t))
+    (let* ((base-bg (or (face-background 'mode-line nil t)
+                        (face-background 'default nil t)
+                        "#000000"))
            ;; Calculate cumulative tint percentage
            (tint-amount (punch-line-calculate-cumulative-tint section-index is-left-side)))
       (adjust-color base-bg tint-amount)))
    (t nil)))
 
-(defun punch-line-calculate-cumulative-tint (section-index is-left-side)
+(defun punch-line-calculate-cumulative-tint (section-index _is-left-side)
   "Calculate cumulative tint percentage for SECTION-INDEX.
-Both sides go from darker at edges to lighter toward center."
-  (if (= section-index 0)
-      ;; First visible section (at edge) uses the start value (negative for darker)
-      (- punch-line-section-background-tint-start)
-    ;; Subsequent sections: each step reduces the darkness (approaches center)
-    (let ((current-tint punch-line-section-background-tint-start))
-      (dotimes (i section-index)
-        (setq current-tint 
-              (* current-tint (- 1.0 (/ punch-line-section-background-tint-step 100.0)))))
-      ;; Return negative for darker tinting, but getting less dark (lighter) as we approach center
-      (- current-tint))))
+The outermost section (index 0) uses `punch-line-section-background-tint-start'
+directly.  Each subsequent section moves the tint toward zero by
+`punch-line-section-background-tint-step' percent."
+  (let ((current-tint (float punch-line-section-background-tint-start)))
+    (dotimes (_ section-index)
+      (setq current-tint
+            (* current-tint (- 1.0 (/ punch-line-section-background-tint-step 100.0)))))
+    current-tint))
 
 (defun punch-line-wrap-with-background (str section-name section-index &optional is-left-side)
   "Wrap STR with background color for SECTION-NAME at SECTION-INDEX.
-IS-LEFT-SIDE determines tinting direction."
+IS-LEFT-SIDE determines tinting direction.
+Edge sections (modal, time) also get :box for consistent mode-line height."
   (if (or (not str) (string-empty-p str))
       str
     (let ((bg (punch-line-calculate-section-background section-name section-index is-left-side)))
       (if bg
-          ;; Add background with configurable internal padding
           (let* ((padding (make-string punch-line-section-padding ?\s))
                  (padded-str (concat padding str padding))
-                 (result (copy-sequence padded-str)))
-            ;; Add background property to the entire padded string
-            (add-face-text-property 0 (length result) `(:background ,bg) nil result)
+                 (result (copy-sequence padded-str))
+                 (is-edge (memq section-name '(modal time)))
+                 (height-adjust (max 1 (/ (punch-line-modal-height) 2)))
+                 (face-spec (if is-edge
+                                `(:background ,bg
+                                  :box (:line-width ,height-adjust :color ,bg))
+                              `(:background ,bg))))
+            (add-face-text-property 0 (length result) face-spec nil result)
             result)
-        ;; No background - return original string
         str))))
 
 (defun punch-line-wrap-with-background-visible (str section-name visible-sections is-left-side)
@@ -208,9 +220,11 @@ to use for the separator. BACKGROUND applies background color to separator."
 
 (defun punch-line-format-left ()
   "Create the left section of the mode-line with caching."
-  (if punch-line-section-backgrounds
+   (if punch-line-section-backgrounds
       ;; Background mode - use visible sections logic
-      (let* ((sections (list
+      (let* ((modal-str (punch-evil-status))
+             (sections (list
+                        (cons 'modal modal-str)
                         (cons 'filename (punch-buffer-name))
                         (cons 'major-mode (punch-major-mode))
                         (cons 'project (punch-project-info))
@@ -225,8 +239,7 @@ to use for the separator. BACKGROUND applies background color to separator."
                (punch-macro-info)
                (punch-iedit-info)
                (punch-evil-mc-info)
-               ;; Keep evil status separate and use proper background wrapping for filename
-               (punch-evil-status)
+               (punch-line-wrap-with-background-visible modal-str 'modal visible-sections t)
                (punch-line-wrap-with-background-visible (punch-buffer-name) 'filename visible-sections t)
                (punch-line-add-separator 
                 :str (punch-line-wrap-with-background-visible (punch-major-mode) 'major-mode visible-sections t) 
@@ -262,9 +275,10 @@ to use for the separator. BACKGROUND applies background color to separator."
 
 (defun punch-line-format-right ()
   "Create the right section of the mode-line with caching."
-  (if punch-line-section-backgrounds
+   (if punch-line-section-backgrounds
       ;; Background mode - use visible sections logic
-      (let* ((sections (list
+      (let* ((time-str (punch-time-info))
+             (sections (list
                        (cons 'music (punch-line-music-info))
                        (cons 'system-monitor (punch-system-monitor-info))
                        (cons 'column (punch-line-col))
@@ -274,7 +288,8 @@ to use for the separator. BACKGROUND applies background color to separator."
                        (cons 'misc (punch-misc-info))
                        (cons 'git (punch-git-info))
                        (cons 'weather (punch-weather-info))
-                       (cons 'battery (punch-battery-info))))
+                       (cons 'battery (punch-battery-info))
+                       (cons 'time time-str)))
              (visible-sections (cl-remove-if (lambda (section) 
                                                (or (not (cdr section))
                                                    (string-empty-p (cdr section))))
@@ -318,8 +333,11 @@ to use for the separator. BACKGROUND applies background color to separator."
           :str (punch-line-wrap-with-background-visible (punch-weather-info) 'weather reversed-sections nil) 
           :separator punch-line-right-separator :leftside t
           :background (punch-line-get-section-background 'weather reversed-sections nil))
-         (punch-line-wrap-with-background-visible (punch-battery-info) 'battery reversed-sections nil)
-         (punch-time-info)))
+         (punch-line-add-separator
+          :str (punch-line-wrap-with-background-visible (punch-battery-info) 'battery reversed-sections nil)
+          :separator punch-line-right-separator :leftside t
+          :background (punch-line-get-section-background 'battery reversed-sections nil))
+         (punch-line-wrap-with-background-visible time-str 'time reversed-sections nil)))
     ;; No backgrounds - use original simple format
     (concat
      (punch-line-add-separator :str (punch-line-music-info) :separator punch-line-right-separator :leftside t)
@@ -335,8 +353,23 @@ to use for the separator. BACKGROUND applies background color to separator."
      (punch-time-info))))
 
 (defun punch-line-format-inactive ()
-  "Inactive format with Evil status and buffer name in gray."
-  (propertize (concat " " (punch-buffer-name)) 'face 'punch-line-inactive-face))
+  "Inactive format with buffer name in gray, matching active mode-line height."
+  (let* ((file-name (buffer-file-name))
+         (height-adjust (max 1 (/ (punch-line-modal-height) 2)))
+         (bg-color (or (face-background 'mode-line-inactive nil t)
+                       (face-background 'mode-line nil t)
+                       (face-background 'default nil t)
+                       "#000000"))
+         (base-face `(:inherit punch-line-inactive-face
+                               :box (:line-width ,height-adjust :color ,bg-color)))
+         (icon (when file-name
+                 (propertize (nerd-icons-icon-for-file file-name)
+                             'face base-face)))
+         (buffer-name (file-name-sans-extension
+                       (substring-no-properties (format-mode-line "%b")))))
+    (if icon
+        (concat " " icon " " (propertize buffer-name 'face base-face) " ")
+      (propertize (concat " " buffer-name " ") 'face base-face))))
 
 (defun punch-line-format ()
   "Generate the mode-line format."

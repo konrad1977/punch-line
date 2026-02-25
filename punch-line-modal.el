@@ -56,6 +56,28 @@
           (const :tag "Block" block))
   :group 'punch-line)
 
+(defcustom punch-line-coloring-style 'full
+  "Style of evil/modal state coloring in the mode-line.
+`full'    - Colored block/pill with state name text and colored time (default).
+`dot'     - A single colored dot (●) indicating the current state.
+`minimal' - No evil state indicator and no colored time."
+  :type '(choice
+          (const :tag "Full colored block with state name" full)
+          (const :tag "Colored dot indicator" dot)
+          (const :tag "No evil coloring" minimal))
+  :initialize #'custom-initialize-default
+  :set (lambda (sym val)
+         (set-default sym val)
+         ;; Invalidate modal cache in all buffers when style changes
+         (dolist (buf (buffer-list))
+           (with-current-buffer buf
+             (setq punch-line--modal-cache nil
+                   punch-line--modal-cache-state nil)))
+         ;; Force mode-line update
+         (when (fboundp 'punch-line-update)
+           (punch-line-update t)))
+  :group 'punch-line)
+
 (defun punch-line-get-divider-icon-height ()
   "Get the height of the divider icon based on size."
   (pcase punch-line-modal-size
@@ -142,6 +164,16 @@
         ""
       (propertize " " 'face `(:foreground ,background-face)))))
 
+(defun punch-line--height-spacer ()
+  "Return an invisible propertized string that preserves mode-line height.
+Uses the current `punch-line-modal-size' to calculate the box height."
+  (let* ((height-adjust (max 1 (/ (punch-line-modal-height) 2)))
+         (bg (or (face-background 'mode-line nil t)
+                 (face-background 'default nil t)
+                 "#000000")))
+    (propertize " " 'face `(:box (:line-width ,height-adjust :color ,bg)
+                             :foreground ,bg :background ,bg))))
+
 (defvar-local punch-line--modal-cache nil
   "Cache for modal status.")
 
@@ -149,8 +181,13 @@
   "Cached modal state.")
 
 (defun punch-evil-status ()
-  "Show Evil/Meow status with custom face and correct vertical alignment."
-  (if punch-line-show-modal-section
+  "Show Evil/Meow status with custom face and correct vertical alignment.
+Respects `punch-line-coloring-style':
+  `full'    - Colored block/pill with state name text and divider.
+  `dot'     - A single colored dot (●) indicating the current state.
+  `minimal' - No indicator shown."
+  (if (and punch-line-show-modal-section
+           (not (eq punch-line-coloring-style 'minimal)))
       (let* ((current-state (cond ((punch-line-evil-available-p) evil-state)
                                   ((punch-line-meow-available-p) meow-state)
                                   (t 'emacs))))
@@ -159,27 +196,31 @@
             punch-line--modal-cache
           (let* ((state-face (or (cdr (assq current-state punch-evil-faces))
                                  'punch-line-evil-emacs-face))
-                 (state-name (upcase (symbol-name current-state)))
-                 (background-face (face-background state-face nil t))
-                 (height-adjust (/ (punch-line-modal-height) 2))
-                 (divider (punch-evil-divider
-                           :icon (punch-line-get-divider-icon)
-                           :icon-height (punch-line-get-divider-icon-height)
-                           :background-face background-face
-                           :v-adjust (* (/ (punch-line-modal-height) 102.0 2.0) -1.0))))
+                 (background-color (face-background state-face nil t)))
             (setq punch-line--modal-cache-state current-state
                   punch-line--modal-cache
-                  (concat
-                   (propertize ""
-                               'face `(:inherit ,state-face
-                                                :box (:line-width ,height-adjust :color ,background-face)
-                                                :height ,(punch-line-get-divider-icon-height)))
-                   (propertize (format " %s " state-name)
-                               'face `(:inherit ,state-face
-                                                :box (:line-width ,height-adjust :color ,background-face)))
-                   divider
-                   "")))))
-    (propertize " " 'face 'punch-line-evil-normal-face)))
+                  (pcase punch-line-coloring-style
+                    ('dot
+                     (propertize "●" 'face `(:foreground ,background-color)))
+                     (_  ;; 'full (default)
+                     (let* ((state-name (upcase (symbol-name current-state)))
+                            (height-adjust (max 1 (/ (punch-line-modal-height) 2)))
+                            (divider (punch-evil-divider
+                                      :icon (punch-line-get-divider-icon)
+                                      :icon-height (punch-line-get-divider-icon-height)
+                                      :background-face background-color
+                                      :v-adjust (* (/ (punch-line-modal-height) 102.0 2.0) -1.0))))
+                       (concat
+                        (propertize ""
+                                    'face `(:inherit ,state-face
+                                                     :box (:line-width ,height-adjust :color ,background-color)
+                                                     :height ,(punch-line-get-divider-icon-height)))
+                        (propertize (format " %s " state-name)
+                                    'face `(:inherit ,state-face
+                                                     :box (:line-width ,height-adjust :color ,background-color)))
+                        divider
+                        ""))))))))
+    ""))
 
 (defun punch-evil-mc-info ()
   "Show Evil MC information if available."
@@ -204,26 +245,33 @@
         ""))))
 
 (defun punch-time-info ()
-  "Show time with background matching the current evil state."
-  (let* ((state (cond ((punch-line-evil-available-p) evil-state)
-                      ((punch-line-meow-available-p) meow-state)
-                      (t 'emacs)))
-         (state-face (or (cdr (assq state punch-evil-faces))
-                         'punch-line-evil-emacs-face))
-         (background-color (face-background state-face nil t))
-         (height-adjust (/ (punch-line-modal-height) 2))
-         (divider (punch-evil-divider
-                   :icon (punch-line-get-right-side-divider-icon)
-                   :icon-height (punch-line-get-divider-icon-height)
-                   :background-face background-color
-                   :v-adjust (* (/ (punch-line-modal-height) 102.0 2.0) -1.0))))
-    (concat
-     ;; Reduce spacing when section backgrounds are enabled
-     (if (bound-and-true-p punch-line-section-backgrounds) "" " ")
-     divider
-     (propertize (format-time-string " %H:%M ")
-                 'face `(:inherit ,state-face
-                                  :background ,background-color)))))
+  "Show time with background matching the current evil state.
+When `punch-line-coloring-style' is `dot' or `minimal', the time
+is shown without evil state coloring."
+  (if (eq punch-line-coloring-style 'full)
+      ;; Full mode: colored time with evil state background and divider
+      (let* ((state (cond ((punch-line-evil-available-p) evil-state)
+                          ((punch-line-meow-available-p) meow-state)
+                          (t 'emacs)))
+             (state-face (or (cdr (assq state punch-evil-faces))
+                             'punch-line-evil-emacs-face))
+             (background-color (face-background state-face nil t))
+             (height-adjust (max 1 (/ (punch-line-modal-height) 2)))
+             (divider (punch-evil-divider
+                       :icon (punch-line-get-right-side-divider-icon)
+                       :icon-height (punch-line-get-divider-icon-height)
+                       :background-face background-color
+                       :v-adjust (* (/ (punch-line-modal-height) 102.0 2.0) -1.0))))
+        (concat
+         ;; Reduce spacing when section backgrounds are enabled
+         (if (bound-and-true-p punch-line-section-backgrounds) "" " ")
+         divider
+         (propertize (format-time-string " %H:%M  ")
+                     'face `(:inherit ,state-face
+                                      :background ,background-color))))
+    ;; Dot/minimal mode: plain time without evil coloring
+    (propertize (format-time-string " %H:%M   ")
+                'face 'punch-line-time-face)))
 
 (provide 'punch-line-modal)
 ;;; punch-line-modal.el ends here
