@@ -3,7 +3,7 @@
 ;; Copyright (C) 2025 Mikael Konradsson
 ;; Author: Mikael Konradsson
 ;; Version: 1.0
-;; Package-Requires: ((emacs "28.1") (async "1.9"))
+;; Package-Requires: ((emacs "28.1") (async "1.9") (nerd-icons "0.0.1"))
 ;; URL: https://github.com/konrad1977/punch-line
 ;; Keywords: mode-line, faces
 
